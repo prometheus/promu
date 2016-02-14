@@ -1,0 +1,116 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"path": "github.com/BurntSushi/toml",
+			"revision": "5c4df71dfe9ac89ef6287afc05e4c1b16ae65a1e",
+			"revisionTime": "2016-01-02T09:47:48-05:00"
+		},
+		{
+			"path": "github.com/hashicorp/hcl",
+			"revision": "1c284ec98f4b398443cbabb0d9197f7f4cc0077c",
+			"revisionTime": "2016-02-10T10:31:11-08:00"
+		},
+		{
+			"path": "github.com/hashicorp/hcl/hcl/ast",
+			"revision": "1c284ec98f4b398443cbabb0d9197f7f4cc0077c",
+			"revisionTime": "2016-02-10T10:31:11-08:00"
+		},
+		{
+			"path": "github.com/hashicorp/hcl/hcl/parser",
+			"revision": "1c284ec98f4b398443cbabb0d9197f7f4cc0077c",
+			"revisionTime": "2016-02-10T10:31:11-08:00"
+		},
+		{
+			"path": "github.com/hashicorp/hcl/hcl/scanner",
+			"revision": "1c284ec98f4b398443cbabb0d9197f7f4cc0077c",
+			"revisionTime": "2016-02-10T10:31:11-08:00"
+		},
+		{
+			"path": "github.com/hashicorp/hcl/hcl/strconv",
+			"revision": "1c284ec98f4b398443cbabb0d9197f7f4cc0077c",
+			"revisionTime": "2016-02-10T10:31:11-08:00"
+		},
+		{
+			"path": "github.com/hashicorp/hcl/hcl/token",
+			"revision": "1c284ec98f4b398443cbabb0d9197f7f4cc0077c",
+			"revisionTime": "2016-02-10T10:31:11-08:00"
+		},
+		{
+			"path": "github.com/hashicorp/hcl/json/parser",
+			"revision": "1c284ec98f4b398443cbabb0d9197f7f4cc0077c",
+			"revisionTime": "2016-02-10T10:31:11-08:00"
+		},
+		{
+			"path": "github.com/hashicorp/hcl/json/scanner",
+			"revision": "1c284ec98f4b398443cbabb0d9197f7f4cc0077c",
+			"revisionTime": "2016-02-10T10:31:11-08:00"
+		},
+		{
+			"path": "github.com/hashicorp/hcl/json/token",
+			"revision": "1c284ec98f4b398443cbabb0d9197f7f4cc0077c",
+			"revisionTime": "2016-02-10T10:31:11-08:00"
+		},
+		{
+			"path": "github.com/kr/pretty",
+			"revision": "e6ac2fc51e89a3249e82157fa0bb7a18ef9dd5bb",
+			"revisionTime": "2015-05-20T12:35:14-04:00"
+		},
+		{
+			"path": "github.com/kr/text",
+			"revision": "bb797dc4fb8320488f47bf11de07a733d7233e1f",
+			"revisionTime": "2015-09-05T15:45:08-07:00"
+		},
+		{
+			"path": "github.com/magiconair/properties",
+			"revision": "c81f9d71af8f8cba1466501d30326b99a4e56c19",
+			"revisionTime": "2015-12-21T22:31:49+01:00"
+		},
+		{
+			"path": "github.com/mitchellh/mapstructure",
+			"revision": "d2dd0262208475919e1a362f675cfc0e7c10e905",
+			"revisionTime": "2016-02-11T19:18:39-08:00"
+		},
+		{
+			"path": "github.com/progrium/go-shell",
+			"revision": "af1cf5b0dbf1ce2fef7acc105de42857439b0cca",
+			"revisionTime": "2015-08-28T09:39:56-05:00"
+		},
+		{
+			"path": "github.com/spf13/cast",
+			"revision": "ee7b3e0353166ab1f3a605294ac8cd2b77953778",
+			"revisionTime": "2015-11-26T07:42:19+01:00"
+		},
+		{
+			"path": "github.com/spf13/cobra",
+			"revision": "65a708cee0a4424f4e353d031ce440643e312f92",
+			"revisionTime": "2016-02-08T02:29:17+08:00"
+		},
+		{
+			"path": "github.com/spf13/jwalterweatherman",
+			"revision": "d00654080cddbd2b082acaa74007cb94a2b40866",
+			"revisionTime": "2015-10-14T12:42:31+05:30"
+		},
+		{
+			"path": "github.com/spf13/pflag",
+			"revision": "7f60f83a2c81bc3c3c0d5297f61ddfa68da9d3b7",
+			"revisionTime": "2015-10-24T12:54:09+02:00"
+		},
+		{
+			"path": "github.com/spf13/viper",
+			"revision": "c975dc1b4eacf4ec7fdbf0873638de5d090ba323",
+			"revisionTime": "2015-12-29T23:11:39-07:00"
+		},
+		{
+			"path": "gopkg.in/fsnotify.v1",
+			"revision": "8611c35ab31c1c28aa903d33cf8b6e44a399b09e",
+			"revisionTime": "2016-01-10T16:04:37+01:00"
+		},
+		{
+			"path": "gopkg.in/yaml.v2",
+			"revision": "f7716cbe52baa25d2e9b0d0da546fcf909fc16b4",
+			"revisionTime": "2015-12-01T14:27:45-02:00"
+		}
+	]
+}
