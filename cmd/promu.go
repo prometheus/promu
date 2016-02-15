@@ -33,6 +33,7 @@ var (
 
 	cfgFile  string
 	useViper bool
+	verbose  bool
 )
 
 // This represents the base command when called without any subcommands
@@ -58,7 +59,7 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	Promu.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is ./.promu.yml)")
-	Promu.PersistentFlags().BoolP("verbose", "v", false, "verbose output")
+	Promu.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "verbose output")
 	Promu.PersistentFlags().BoolVar(&useViper, "viper", true, "Use Viper for configuration")
 
 	viper.BindPFlag("useViper", Promu.PersistentFlags().Lookup("viper"))
@@ -81,10 +82,12 @@ func initConfig() {
 
 	// If a config file is found, read it in.
 	err := viper.ReadInConfig()
-	if err != nil {
-		panic(fmt.Errorf("Fatal error config file: %s \n", err))
-	} else if viper.GetBool("verbose") {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
+	if verbose {
+		if err != nil {
+			fmt.Println("Error in config file:", err)
+		} else {
+			fmt.Println("Using config file:", viper.ConfigFileUsed())
+		}
 	}
 }
 
@@ -105,11 +108,11 @@ func shellOutput(cmd string) string {
 
 // fileExists checks if a file exists
 func fileExists(path ...string) bool {
-	_, err := os.Stat(filepath.Join(path...))
-	if err == nil {
+	finfo, err := os.Stat(filepath.Join(path...))
+	if err == nil && !finfo.IsDir() {
 		return true
 	}
-	if os.IsNotExist(err) {
+	if os.IsNotExist(err) || finfo.IsDir() {
 		return false
 	}
 	fatal(err)

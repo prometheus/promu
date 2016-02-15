@@ -42,6 +42,7 @@ var versionCmd = &cobra.Command{
 	},
 }
 
+// init prepares cobra flags
 func init() {
 	Promu.AddCommand(versionCmd)
 

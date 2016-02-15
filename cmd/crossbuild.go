@@ -25,11 +25,11 @@ import (
 )
 
 var (
-	dockerBuilderImageName = "prom/golang-builder"
-	mainBuilderImage       = fmt.Sprintf("%s:main", dockerBuilderImageName)
-	ARMBuilderImage        = fmt.Sprintf("%s:arm", dockerBuilderImageName)
-	powerPCBuilderImage    = fmt.Sprintf("%s:powerpc", dockerBuilderImageName)
-	//MIPSBuilderImage       = fmt.Sprintf("%s:mips", dockerBuilderImageName)
+	dockerBuilderImageName    = "prom/golang-builder"
+	dockerMainBuilderImage    = fmt.Sprintf("%s:main", dockerBuilderImageName)
+	dockerARMBuilderImage     = fmt.Sprintf("%s:arm", dockerBuilderImageName)
+	dockerPowerPCBuilderImage = fmt.Sprintf("%s:powerpc", dockerBuilderImageName)
+	//dockerMIPSBuilderImage       = fmt.Sprintf("%s:mips", dockerBuilderImageName)
 
 	defaultMainPlatforms = []string{
 		"linux/amd64", "linux/386", "darwin/amd64", "darwin/386", "windows/amd64", "windows/386",
@@ -56,6 +56,7 @@ var crossbuildCmd = &cobra.Command{
 	},
 }
 
+// init prepares cobra flags
 func init() {
 	Promu.AddCommand(crossbuildCmd)
 
@@ -114,24 +115,24 @@ func runCrossbuild() {
 	if len(mainPlatforms) > 0 {
 		fmt.Println("> running the main builder docker image")
 		sh("docker run --rm -t -v $PWD:/app",
-			mainBuilderImage, "-i", repoPath, "-p", q(strings.Join(mainPlatforms[:], " ")))
+			dockerMainBuilderImage, "-i", repoPath, "-p", q(strings.Join(mainPlatforms[:], " ")))
 	}
 
 	if len(ARMPlatforms) > 0 {
 		fmt.Println("> running the ARM builder docker image")
 		sh("docker run --rm -t -v $PWD:/app",
-			ARMBuilderImage, "-i", repoPath, "-p", q(strings.Join(ARMPlatforms[:], " ")))
+			dockerARMBuilderImage, "-i", repoPath, "-p", q(strings.Join(ARMPlatforms[:], " ")))
 	}
 
 	if len(powerPCPlatforms) > 0 {
 		fmt.Println("> running the PowerPC builder docker image")
 		sh("docker run --rm -t -v $PWD:/app",
-			powerPCBuilderImage, "-i", repoPath, "-p", q(strings.Join(powerPCPlatforms[:], " ")))
+			dockerPowerPCBuilderImage, "-i", repoPath, "-p", q(strings.Join(powerPCPlatforms[:], " ")))
 	}
 
 	/*if len(MIPSPlatforms) > 0 {
 		fmt.Println("> running the MIPS builder docker image")
 		sh("docker run --rm -t -v $PWD:/app",
-			MIPSBuilderImage, "-i", repoPath, "-p", q(strings.Join(MIPSPlatforms[:], " ")))
+			dockerMIPSBuilderImage, "-i", repoPath, "-p", q(strings.Join(MIPSPlatforms[:], " ")))
 	}*/
 }

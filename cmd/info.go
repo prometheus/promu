@@ -31,6 +31,7 @@ var infoCmd = &cobra.Command{
 	},
 }
 
+// init prepares cobra flags
 func init() {
 	Promu.AddCommand(infoCmd)
 }
@@ -77,9 +78,9 @@ func repoLocation() string {
 
 func findVersion() string {
 	var files = []string{"VERSION", "version/VERSION"}
-	for _, value := range files {
-		if fileExists(value) {
-			return readFile(value)
+	for _, file := range files {
+		if fileExists(file) {
+			return readFile(file)
 		}
 	}
 	return ""
