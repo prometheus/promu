@@ -127,3 +127,10 @@ func readFile(path string) string {
 	}
 	return strings.Trim(string(data), "\n ")
 }
+
+func optArg(args []string, i int, default_ string) string {
+	if i+1 > len(args) {
+		return default_
+	}
+	return args[i]
+}
