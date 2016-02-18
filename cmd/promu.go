@@ -99,6 +99,14 @@ func fatal(err error) {
 	}
 }
 
+// fatalMsg prints a message and exit
+func fatalMsg(err error, msg string) {
+	if err != nil {
+		fmt.Println("!!", msg, err)
+		os.Exit(1)
+	}
+}
+
 // shellOutput executes a shell command and return the trimmed output
 func shellOutput(cmd string) string {
 	args := strings.Split(cmd, " ")

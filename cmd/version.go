@@ -60,6 +60,6 @@ func runVersion() {
 	fmt.Println("Build User:", BuildUser)
 	fmt.Println("Build Date:", BuildDate)
 	fmt.Println("Go Version:", runtime.Version())
-	fmt.Println("Go OS/Arch:", runtime.GOOS, "/", runtime.GOARCH)
+	fmt.Println("Go OS/Arch:", runtime.GOOS + "/" + runtime.GOARCH)
 	return
 }

@@ -24,13 +24,17 @@ import (
 	"github.com/spf13/viper"
 )
 
+var (
+	tmpDir = ".release"
+)
+
 // tarballCmd represents the tarball command
 var tarballCmd = &cobra.Command{
 	Use:   "tarball [<prefix>] [<binaries-location>]",
 	Short: "Create a tarball from the builded Go project",
 	Run: func(cmd *cobra.Command, args []string) {
-		prefix := optArg(args, 1, ".")
-		binariesLocation := optArg(args, 2, ".")
+		prefix := optArg(args, 0, ".")
+		binariesLocation := optArg(args, 1, ".")
 		runTarball(prefix, binariesLocation)
 	},
 }
@@ -41,16 +45,22 @@ func init() {
 }
 
 func runTarball(prefix string, binariesLocation string) {
+	defer shell.ErrExit()
+
+	if viper.GetBool("verbose") {
+		shell.Trace = true
+		shell.Tee = os.Stdout
+	}
+
 	info := NewProjectInfo()
 
 	var (
-		tmpDir = ".release"
-
 		binaries []Binary
 		ext      string
 	)
 
 	os.Mkdir(tmpDir, 0777)
+	defer sh("rm -rf", tmpDir)
 
 	projectFiles := viper.GetStringSlice("tarball.files")
 	for _, file := range projectFiles {
@@ -58,9 +68,7 @@ func runTarball(prefix string, binariesLocation string) {
 	}
 
 	err := viper.UnmarshalKey("build.binaries", &binaries)
-	if err != nil {
-		fmt.Println("Failed to Unmashal binaries :", err)
-	}
+	fatalMsg(err, "Failed to Unmashal binaries :")
 
 	for _, binary := range binaries {
 		binaryName := fmt.Sprintf("%s%s", binary.Name, ext)
@@ -69,6 +77,4 @@ func runTarball(prefix string, binariesLocation string) {
 
 	tar := fmt.Sprintf("%s-%s.%s-%s.tar.gz", info.Name, info.Version, runtime.GOOS, runtime.GOARCH)
 	sh("tar zcf", shell.Path(prefix, tar), "-C", tmpDir, ".")
-
-	sh("rm -rf", tmpDir)
 }

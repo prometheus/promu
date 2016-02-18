@@ -33,7 +33,7 @@ var buildCmd = &cobra.Command{
 	Use:   "build [<prefix>]",
 	Short: "Build a Go project",
 	Run: func(cmd *cobra.Command, args []string) {
-		prefix := optArg(args, 1, ".")
+		prefix := optArg(args, 0, ".")
 		runBuild(prefix)
 	},
 }
@@ -49,6 +49,13 @@ type Binary struct {
 }
 
 func runBuild(prefix string) {
+	defer shell.ErrExit()
+
+	if viper.GetBool("verbose") {
+		shell.Trace = true
+		shell.Tee = os.Stdout
+	}
+
 	info := NewProjectInfo()
 
 	var (
@@ -69,9 +76,7 @@ func runBuild(prefix string) {
 	os.Setenv("GO15VENDOREXPERIMENT", "1")
 
 	err := viper.UnmarshalKey("build.binaries", &binaries)
-	if err != nil {
-		fmt.Println("Failed to Unmashal binaries :", err)
-	}
+	fatalMsg(err, "Failed to Unmashal binaries :")
 
 	for _, binary := range binaries {
 		binaryName := fmt.Sprintf("%s%s", binary.Name, ext)
@@ -95,13 +100,10 @@ func getLdflags(info ProjectInfo) string {
 		)
 
 		tmpl, err := template.New("ldflags").Funcs(fnMap).Parse(ldflags)
-		if err != nil {
-			fmt.Println("Failed to parse ldflags text/template :", err)
-		}
+		fatalMsg(err, "Failed to parse ldflags text/template :")
+
 		err = tmpl.Execute(tmplOutput, info)
-		if err != nil {
-			fmt.Println("Failed to execute ldflags text/template :", err)
-		}
+		fatalMsg(err, "Failed to execute ldflags text/template :")
 
 		if runtime.GOOS != "darwin" {
 			tmplOutput.WriteString("-extldflags \"-static\"")
