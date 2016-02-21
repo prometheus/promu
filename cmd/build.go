@@ -30,17 +30,26 @@ import (
 
 // buildCmd represents the build command
 var buildCmd = &cobra.Command{
-	Use:   "build [<prefix>]",
+	Use:   "build",
 	Short: "Build a Go project",
+	Long:  `Build a Go project`,
 	Run: func(cmd *cobra.Command, args []string) {
-		prefix := optArg(args, 0, ".")
-		runBuild(prefix)
+		runBuild()
+	},
+	PreRun: func(cmd *cobra.Command, args []string) {
+		if !viper.IsSet("build.prefix") {
+			viper.Set("build.prefix", ".")
+		}
 	},
 }
 
 // init prepares cobra flags
 func init() {
 	Promu.AddCommand(buildCmd)
+
+	buildCmd.Flags().String("prefix", "", "Specific dir to store binaries (default is .)")
+
+	viper.BindPFlag("build.prefix", buildCmd.Flags().Lookup("prefix"))
 }
 
 type Binary struct {
@@ -48,29 +57,31 @@ type Binary struct {
 	Path string
 }
 
-func runBuild(prefix string) {
+func runBuild() {
 	defer shell.ErrExit()
+	shell.Tee = os.Stdout
 
 	if viper.GetBool("verbose") {
 		shell.Trace = true
-		shell.Tee = os.Stdout
 	}
 
 	info := NewProjectInfo()
 
 	var (
+		prefix   = viper.GetString("build.prefix")
 		repoPath = viper.GetString("repository.path")
+		flags    = viper.GetString("build.flags")
+
 		ext      string
 		binaries []Binary
 		ldflags  string
 	)
 
-	ldflags = getLdflags(info)
-
-	if runtime.GOOS == "windows" {
+	if goos == "windows" {
 		ext = ".exe"
 	}
 
+	ldflags = getLdflags(info)
 	ldflag := fmt.Sprintf("-ldflags \"%s\"", ldflags)
 
 	os.Setenv("GO15VENDOREXPERIMENT", "1")
@@ -81,7 +92,7 @@ func runBuild(prefix string) {
 	for _, binary := range binaries {
 		binaryName := fmt.Sprintf("%s%s", binary.Name, ext)
 		fmt.Printf(" >   %s\n", binaryName)
-		sh("go build", ldflag, "-o", shell.Path(prefix, binaryName), shell.Path(repoPath, binary.Path))
+		sh("go build", flags, ldflag, "-o", shell.Path(prefix, binaryName), shell.Path(repoPath, binary.Path))
 	}
 }
 
@@ -105,7 +116,7 @@ func getLdflags(info ProjectInfo) string {
 		err = tmpl.Execute(tmplOutput, info)
 		fatalMsg(err, "Failed to execute ldflags text/template :")
 
-		if runtime.GOOS != "darwin" {
+		if goos != "darwin" {
 			tmplOutput.WriteString("-extldflags \"-static\"")
 		}
 

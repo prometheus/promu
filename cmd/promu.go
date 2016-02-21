@@ -16,6 +16,7 @@ package cmd
 
 import (
 	"fmt"
+	"go/build"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -28,8 +29,11 @@ import (
 )
 
 var (
-	sh = shell.Run
-	q  = shell.Quote
+	sh           = shell.Run
+	q            = shell.Quote
+	buildContext = build.Default
+	goos         = buildContext.GOOS
+	goarch       = buildContext.GOARCH
 
 	cfgFile  string
 	useViper bool
@@ -40,6 +44,7 @@ var (
 var Promu = &cobra.Command{
 	Use:   "promu",
 	Short: "promu is the utility tool for Prometheus projects",
+	Long:  `promu is the utility tool for Prometheus projects`,
 	Run: func(cmd *cobra.Command, args []string) {
 		cmd.Help()
 	},
@@ -58,8 +63,8 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	Promu.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is ./.promu.yml)")
-	Promu.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "verbose output")
+	Promu.PersistentFlags().StringVar(&cfgFile, "config", "", "Config file (default is ./.promu.yml)")
+	Promu.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Verbose output")
 	Promu.PersistentFlags().BoolVar(&useViper, "viper", true, "Use Viper for configuration")
 
 	viper.BindPFlag("useViper", Promu.PersistentFlags().Lookup("viper"))

@@ -36,7 +36,7 @@ var (
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print the version and exit",
-	Long:  "Print the version of promu, and various build and configuration information.",
+	Long:  `Print the version of promu, and various build and configuration information.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		runVersion()
 	},
@@ -60,6 +60,6 @@ func runVersion() {
 	fmt.Println("Build User:", BuildUser)
 	fmt.Println("Build Date:", BuildDate)
 	fmt.Println("Go Version:", runtime.Version())
-	fmt.Println("Go OS/Arch:", runtime.GOOS + "/" + runtime.GOARCH)
+	fmt.Println("Go OS/Arch:", runtime.GOOS+"/"+runtime.GOARCH)
 	return
 }

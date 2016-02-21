@@ -26,6 +26,7 @@ import (
 var infoCmd = &cobra.Command{
 	Use:   "info",
 	Short: "Print info about current project and exit",
+	Long:  `Print info about current project and exit`,
 	Run: func(cmd *cobra.Command, args []string) {
 		runInfo()
 	},

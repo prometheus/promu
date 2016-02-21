@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -e
+set -euo pipefail
 
 repo_path="github.com/sdurrheimer/promu"
 
@@ -23,6 +23,7 @@ revision=$( git rev-parse --short HEAD 2> /dev/null || echo 'unknown' )
 branch=$( git rev-parse --abbrev-ref HEAD 2> /dev/null || echo 'unknown' )
 host=$( hostname -f )
 build_date=$( date +%Y%m%d-%H:%M:%S )
+ext=""
 
 if [ "$(go env GOOS)" = "windows" ]; then
   ext=".exe"

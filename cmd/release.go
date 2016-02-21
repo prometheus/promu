@@ -32,7 +32,8 @@ var (
 // releaseCmd represents the release command
 var releaseCmd = &cobra.Command{
 	Use:   "release [<tarballs-location>]",
-	Short: "Upload tarballs to the github release",
+	Short: "Upload tarballs to the Github release",
+	Long:  `Upload tarballs to the Github release`,
 	Run: func(cmd *cobra.Command, args []string) {
 		tarballsLocation := optArg(args, 0, ".")
 		runRelease(tarballsLocation)
@@ -46,10 +47,10 @@ func init() {
 
 func runRelease(tarballsLocation string) {
 	defer shell.ErrExit()
+	shell.Tee = os.Stdout
 
 	if viper.GetBool("verbose") {
 		shell.Trace = true
-		shell.Tee = os.Stdout
 	}
 
 	err := filepath.Walk(tarballsLocation, uploadTarball)

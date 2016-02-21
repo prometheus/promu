@@ -50,9 +50,24 @@ var (
 // crossbuildCmd represents the crossbuild command
 var crossbuildCmd = &cobra.Command{
 	Use:   "crossbuild",
-	Short: "Crossbuild a Go project using Docker builder images",
+	Short: "Crossbuild a Go project using Golang builder Docker images",
+	Long:  `Crossbuild a Go project using Golang builder Docker images`,
 	Run: func(cmd *cobra.Command, args []string) {
 		runCrossbuild()
+	},
+	PreRun: func(cmd *cobra.Command, args []string) {
+		if !viper.IsSet("crossbuild.platforms.main") {
+			viper.Set("crossbuild.platforms.main", defaultMainPlatforms)
+		}
+		if !viper.IsSet("crossbuild.platforms.arm") {
+			viper.Set("crossbuild.platforms.arm", defaultARMPlatforms)
+		}
+		if !viper.IsSet("crossbuild.platforms.powerpc") {
+			viper.Set("crossbuild.platforms.powerpc", defaultPowerPCPlatforms)
+		}
+		//if !viper.IsSet("crossbuild.platforms.mips") {
+		//	viper.SetDefault("crossbuild.platforms.mips", defaultMIPSPlatforms)
+		//}
 	},
 }
 
@@ -79,30 +94,13 @@ func init() {
 	//viper.SetDefault("crossbuild.platforms.mips", defaultMIPSPlatforms)
 }
 
-func setViperDefaultValues() {
-	if viper.Get("crossbuild.platforms.main") == "" {
-		viper.Set("crossbuild.platforms.main", defaultMainPlatforms)
-	}
-	if viper.Get("crossbuild.platforms.arm") == "" {
-		viper.Set("crossbuild.platforms.arm", defaultARMPlatforms)
-	}
-	if viper.Get("crossbuild.platforms.powerpc") == "" {
-		viper.Set("crossbuild.platforms.powerpc", defaultPowerPCPlatforms)
-	}
-	//if viper.Get("crossbuild.platforms.mips") == "" {
-	//	viper.SetDefault("crossbuild.platforms.mips", defaultMIPSPlatforms)
-	//}
-}
-
 func runCrossbuild() {
 	defer shell.ErrExit()
+	shell.Tee = os.Stdout
 
 	if viper.GetBool("verbose") {
 		shell.Trace = true
-		shell.Tee = os.Stdout
 	}
-
-	setViperDefaultValues()
 
 	var (
 		repoPath         = viper.GetString("repository.path")
