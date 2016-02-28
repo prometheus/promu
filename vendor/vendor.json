@@ -53,6 +53,11 @@
 			"revisionTime": "2016-02-10T10:31:11-08:00"
 		},
 		{
+			"path": "github.com/inconshreveable/mousetrap",
+			"revision": "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75",
+			"revisionTime": "2014-10-17T13:07:13-07:00"
+		},
+		{
 			"path": "github.com/kr/pretty",
 			"revision": "e6ac2fc51e89a3249e82157fa0bb7a18ef9dd5bb",
 			"revisionTime": "2015-05-20T12:35:14-04:00"
