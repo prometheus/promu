@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -euo pipefail
+set -eo pipefail
 
 repo_path="github.com/sdurrheimer/promu"
 
@@ -21,7 +21,7 @@ prefix=${1:-$(pwd)}
 version=$( cat VERSION )
 revision=$( git rev-parse --short HEAD 2> /dev/null || echo 'unknown' )
 branch=$( git rev-parse --abbrev-ref HEAD 2> /dev/null || echo 'unknown' )
-host=$( hostname -f )
+host=$( hostname )
 build_date=$( date +%Y%m%d-%H:%M:%S )
 ext=""
 

@@ -1,3 +1,4 @@
+go: 1.5.3
 verbose: false
 repository:
     path: github.com/prometheus/prometheus
@@ -50,3 +51,6 @@ crossbuild:
         powerpc:
             - linux/ppc64
             - linux/ppc64le
+        mips:
+            - linux/mips64
+            - linux/mips64le
