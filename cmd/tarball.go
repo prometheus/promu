@@ -61,6 +61,8 @@ func runTarball(binariesLocation string) {
 	var (
 		prefix = viper.GetString("tarball.prefix")
 		tmpDir = ".release"
+		goos   = envOr("GOOS", goos)
+		goarch = envOr("GOARCH", goarch)
 
 		binaries []Binary
 		ext      string

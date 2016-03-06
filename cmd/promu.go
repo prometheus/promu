@@ -147,3 +147,11 @@ func optArg(args []string, i int, default_ string) string {
 	}
 	return args[i]
 }
+
+func envOr(name, def string) string {
+	s := os.Getenv(name)
+	if s == "" {
+		return def
+	}
+	return s
+}
