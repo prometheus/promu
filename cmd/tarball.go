@@ -17,6 +17,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/progrium/go-shell"
 	"github.com/spf13/cobra"
@@ -63,6 +64,7 @@ func runTarball(binariesLocation string) {
 		tmpDir = ".release"
 		goos   = envOr("GOOS", goos)
 		goarch = envOr("GOARCH", goarch)
+		name   = fmt.Sprintf("%s-%s.%s-%s", info.Name, info.Version, goos, goarch)
 
 		binaries []Binary
 		ext      string
@@ -72,12 +74,16 @@ func runTarball(binariesLocation string) {
 		ext = ".exe"
 	}
 
-	os.Mkdir(tmpDir, 0777)
+	dir := filepath.Join(tmpDir, name)
+
+	if err := os.MkdirAll(dir, 0777); err != nil {
+		fatalMsg(err, "Failed to create directory")
+	}
 	defer sh("rm -rf", tmpDir)
 
 	projectFiles := viper.GetStringSlice("tarball.files")
 	for _, file := range projectFiles {
-		sh("cp -a", file, tmpDir)
+		sh("cp -a", file, dir)
 	}
 
 	err := viper.UnmarshalKey("build.binaries", &binaries)
@@ -85,14 +91,14 @@ func runTarball(binariesLocation string) {
 
 	for _, binary := range binaries {
 		binaryName := fmt.Sprintf("%s%s", binary.Name, ext)
-		sh("cp -a", shell.Path(binariesLocation, binaryName), tmpDir)
+		sh("cp -a", shell.Path(binariesLocation, binaryName), dir)
 	}
 
 	if !fileExists(prefix) {
 		os.Mkdir(prefix, 0777)
 	}
 
-	tar := fmt.Sprintf("%s-%s.%s-%s.tar.gz", info.Name, info.Version, goos, goarch)
+	tar := fmt.Sprintf("%s.tar.gz", name)
 	fmt.Println(" >  ", tar)
-	sh("tar zcf", shell.Path(prefix, tar), "-C", tmpDir, ".")
+	sh("tar zcf", shell.Path(prefix, tar), "-C", tmpDir, name)
 }
