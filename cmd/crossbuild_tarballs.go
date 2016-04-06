@@ -28,8 +28,8 @@ import (
 // crossbuildTarballsCmd represents the crossbuild tarballs command
 var crossbuildTarballsCmd = &cobra.Command{
 	Use:   "tarballs",
-	Short: "Create tarballs from crossbuilded binaries",
-	Long:  `Create tarballs from crossbuilded binaries`,
+	Short: "Create tarballs from cross-built binaries",
+	Long:  `Create tarballs from cross-built binaries`,
 	Run: func(cmd *cobra.Command, args []string) {
 		runCrossbuildTarballs()
 	},
