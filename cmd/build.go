@@ -101,11 +101,10 @@ func getLdflags(info ProjectInfo) string {
 		var (
 			tmplOutput = new(bytes.Buffer)
 			fnMap      = template.FuncMap{
-				"date":      time.Now().UTC().Format,
-				"host":      os.Hostname,
-				"user":      UserFunc,
-				"goversion": runtime.Version,
-				"repoPath":  RepoPathFunc,
+				"date":     time.Now().UTC().Format,
+				"host":     os.Hostname,
+				"repoPath": RepoPathFunc,
+				"user":     UserFunc,
 			}
 			ldflags = viper.GetString("build.ldflags")
 		)

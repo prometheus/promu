@@ -17,7 +17,6 @@ build:
         -X {{repoPath}}/version.Branch={{.Branch}}
         -X {{repoPath}}/version.BuildUser={{user}}@{{host}}
         -X {{repoPath}}/version.BuildDate={{date "20060102-15:04:05"}}
-        -X {{repoPath}}/version.GoVersion={{goversion}}
 tarball:
     prefix: .
     files:
