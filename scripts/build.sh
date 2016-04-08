@@ -15,7 +15,7 @@
 
 set -eo pipefail
 
-repo_path="github.com/sdurrheimer/promu"
+repo_path="github.com/prometheus/promu"
 
 prefix=${1:-$(pwd)}
 version=$( cat VERSION )
