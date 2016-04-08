@@ -59,7 +59,6 @@ func NewProjectInfo() ProjectInfo {
 }
 
 func runInfo() {
-	info := NewProjectInfo()
 	fmt.Println("Name:", info.Name)
 	fmt.Println("Version:", info.Version)
 	fmt.Println("Owner:", info.Owner)

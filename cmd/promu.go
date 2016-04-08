@@ -34,6 +34,7 @@ var (
 	buildContext = build.Default
 	goos         = buildContext.GOOS
 	goarch       = buildContext.GOARCH
+	info         = NewProjectInfo()
 
 	cfgFile  string
 	useViper bool

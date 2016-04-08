@@ -57,8 +57,6 @@ func runTarball(binariesLocation string) {
 		shell.Trace = true
 	}
 
-	info := NewProjectInfo()
-
 	var (
 		prefix = viper.GetString("tarball.prefix")
 		tmpDir = ".release"
