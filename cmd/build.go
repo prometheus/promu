@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"os"
 	"os/user"
-	"runtime"
 	"text/template"
 	"time"
 
