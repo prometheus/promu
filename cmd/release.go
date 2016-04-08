@@ -25,10 +25,6 @@ import (
 	"github.com/spf13/viper"
 )
 
-var (
-	info = NewProjectInfo()
-)
-
 // releaseCmd represents the release command
 var releaseCmd = &cobra.Command{
 	Use:   "release [<tarballs-location>]",

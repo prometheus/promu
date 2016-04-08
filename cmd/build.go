@@ -39,6 +39,10 @@ var buildCmd = &cobra.Command{
 		if !viper.IsSet("build.prefix") {
 			viper.Set("build.prefix", ".")
 		}
+		if !viper.IsSet("build.binaries") {
+			binaries := []map[string]string{{"name": info.Name, "path": "."}}
+			viper.Set("build.binaries", binaries)
+		}
 	},
 }
 
@@ -63,8 +67,6 @@ func runBuild() {
 	if viper.GetBool("verbose") {
 		shell.Trace = true
 	}
-
-	info := NewProjectInfo()
 
 	var (
 		prefix   = viper.GetString("build.prefix")
