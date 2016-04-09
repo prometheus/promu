@@ -50,7 +50,7 @@ func runRelease(tarballsLocation string) {
 	}
 
 	err := filepath.Walk(tarballsLocation, uploadTarball)
-	fatalMsg(err, "Failed to upload tarballs:")
+	fatalMsg(err, "Failed to upload tarballs")
 }
 
 func uploadTarball(path string, f os.FileInfo, err error) error {

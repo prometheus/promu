@@ -19,10 +19,10 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"strings"
 )
 
 // crossbuildTarballsCmd represents the crossbuild tarballs command
@@ -53,7 +53,8 @@ func runCrossbuildTarballs() {
 			os.Setenv("GOOS", platform[0])
 			os.Setenv("GOARCH", platform[1])
 		} else {
-			fatalMsg(nil, fmt.Sprintf("Bad .build/%s directory naming, should be <GOOS>-<GOARCH>", platform))
+			err := fmt.Errorf("bad .build/%s directory naming, should be <GOOS>-<GOARCH>", platform)
+			fatal(err)
 		}
 
 		runTarball(filepath.Join(".build", dir.Name()))

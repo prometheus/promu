@@ -88,7 +88,7 @@ func runBuild() {
 	os.Setenv("GO15VENDOREXPERIMENT", "1")
 
 	err := viper.UnmarshalKey("build.binaries", &binaries)
-	fatalMsg(err, "Failed to Unmashal binaries :")
+	fatalMsg(err, "Failed to Unmashal binaries")
 
 	for _, binary := range binaries {
 		binaryName := fmt.Sprintf("%s%s", binary.Name, ext)
@@ -111,10 +111,10 @@ func getLdflags(info ProjectInfo) string {
 		)
 
 		tmpl, err := template.New("ldflags").Funcs(fnMap).Parse(ldflags)
-		fatalMsg(err, "Failed to parse ldflags text/template :")
+		fatalMsg(err, "Failed to parse ldflags text/template")
 
 		err = tmpl.Execute(tmplOutput, info)
-		fatalMsg(err, "Failed to execute ldflags text/template :")
+		fatalMsg(err, "Failed to execute ldflags text/template")
 
 		if goos != "darwin" {
 			tmplOutput.WriteString("-extldflags \"-static\"")

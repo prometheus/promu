@@ -85,7 +85,7 @@ func runTarball(binariesLocation string) {
 	}
 
 	err := viper.UnmarshalKey("build.binaries", &binaries)
-	fatalMsg(err, "Failed to Unmashal binaries :")
+	fatalMsg(err, "Failed to Unmashal binaries")
 
 	for _, binary := range binaries {
 		binaryName := fmt.Sprintf("%s%s", binary.Name, ext)
