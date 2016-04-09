@@ -22,7 +22,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/progrium/go-shell"
+	shell "github.com/progrium/go-shell"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -123,7 +123,7 @@ func getLdflags(info ProjectInfo) string {
 		return tmplOutput.String()
 	}
 
-	return fmt.Sprintf("-X main.Version %s", info.Version)
+	return fmt.Sprintf("-X main.Version=%s", info.Version)
 }
 
 func UserFunc() (interface{}, error) {
