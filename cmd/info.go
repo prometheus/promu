@@ -15,6 +15,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -48,13 +49,17 @@ type ProjectInfo struct {
 
 func NewProjectInfo() ProjectInfo {
 	repo := repoLocation()
+	version, err := findVersion()
+	if err != nil {
+		fatalMsg(err, "Unable to find project's version")
+	}
 	return ProjectInfo{
 		Branch:   shellOutput("git rev-parse --abbrev-ref HEAD"),
 		Name:     filepath.Base(repo),
 		Owner:    filepath.Base(filepath.Dir(repo)),
 		Repo:     repo,
 		Revision: shellOutput("git rev-parse --short HEAD"),
-		Version:  findVersion(),
+		Version:  version,
 	}
 }
 
@@ -76,12 +81,12 @@ func repoLocation() string {
 	return strings.Replace(repo, ":", "/", -1)
 }
 
-func findVersion() string {
+func findVersion() (string, error) {
 	var files = []string{"VERSION", "version/VERSION"}
 	for _, file := range files {
 		if fileExists(file) {
-			return readFile(file)
+			return readFile(file), nil
 		}
 	}
-	return ""
+	return "", errors.New("missing `VERSION` or `version/VERSION` file")
 }

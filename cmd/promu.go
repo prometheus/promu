@@ -108,7 +108,7 @@ func fatal(err error) {
 // fatalMsg prints a message and exit
 func fatalMsg(err error, msg string) {
 	if err != nil {
-		fmt.Println("!!", msg, err)
+		fmt.Printf("!! %s: %s\n", msg, err)
 		os.Exit(1)
 	}
 }
