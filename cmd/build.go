@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"os"
 	"os/user"
+	"strings"
 	"text/template"
 	"time"
 
@@ -98,6 +99,8 @@ func runBuild() {
 }
 
 func getLdflags(info ProjectInfo) string {
+	var ldflags []string
+
 	if viper.IsSet("build.ldflags") {
 		var (
 			tmplOutput = new(bytes.Buffer)
@@ -107,23 +110,28 @@ func getLdflags(info ProjectInfo) string {
 				"repoPath": RepoPathFunc,
 				"user":     UserFunc,
 			}
-			ldflags = viper.GetString("build.ldflags")
+			ldflagsTmpl = viper.GetString("build.ldflags")
 		)
 
-		tmpl, err := template.New("ldflags").Funcs(fnMap).Parse(ldflags)
+		tmpl, err := template.New("ldflags").Funcs(fnMap).Parse(ldflagsTmpl)
 		fatalMsg(err, "Failed to parse ldflags text/template")
 
 		err = tmpl.Execute(tmplOutput, info)
 		fatalMsg(err, "Failed to execute ldflags text/template")
 
-		if goos != "darwin" {
-			tmplOutput.WriteString("-extldflags \"-static\"")
-		}
-
-		return tmplOutput.String()
+		ldflags = append(ldflags, strings.Split(tmplOutput.String(), "\n")...)
+	} else {
+		ldflags = append(ldflags, fmt.Sprintf("-X main.Version=%s", info.Version))
 	}
 
-	return fmt.Sprintf("-X main.Version=%s", info.Version)
+	if goos == "darwin" && !stringInSlice("-s", ldflags) {
+		// Fixes dwarf error: golang/go#11994
+		ldflags = append(ldflags, "-s")
+	} else if !stringInSlice(`-extldflags "-static"`, ldflags) {
+		ldflags = append(ldflags, `-extldflags "-static"`)
+	}
+
+	return strings.Join(ldflags[:], " ")
 }
 
 func UserFunc() (interface{}, error) {
