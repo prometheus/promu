@@ -1,4 +1,4 @@
-go: 1.5.3
+go: 1.5.4
 verbose: false
 repository:
     path: github.com/prometheus/prometheus

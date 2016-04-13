@@ -27,7 +27,7 @@ import (
 var (
 	dockerBuilderImageName = "prom/golang-builder"
 
-	defaultGoVersion     = "1.5.3"
+	defaultGoVersion     = "1.5.4"
 	defaultMainPlatforms = []string{
 		"linux/amd64", "linux/386", "darwin/amd64", "darwin/386", "windows/amd64", "windows/386",
 		"freebsd/amd64", "freebsd/386", "openbsd/amd64", "openbsd/386", "netbsd/amd64", "netbsd/386",
