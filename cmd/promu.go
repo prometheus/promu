@@ -156,3 +156,12 @@ func envOr(name, def string) string {
 	}
 	return s
 }
+
+func stringInSlice(needle string, haystack []string) bool {
+	for _, hay := range haystack {
+		if hay == needle {
+			return true
+		}
+	}
+	return false
+}
