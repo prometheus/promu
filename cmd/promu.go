@@ -97,6 +97,11 @@ func initConfig() {
 	}
 }
 
+// warn prints a non-fatal err
+func warn(err error) {
+	fmt.Println(`/!\`, err)
+}
+
 // fatal prints a error and exit
 func fatal(err error) {
 	fmt.Println("!!", err)
