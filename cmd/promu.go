@@ -165,3 +165,12 @@ func stringInSlice(needle string, haystack []string) bool {
 	}
 	return false
 }
+
+func hasRequiredConfigurations(configVars ...string) error {
+	for _, configVar := range configVars {
+		if !viper.IsSet(configVar) {
+			return false, fmt.Errorf("missing required '%s' configuration", configVar)
+		}
+	}
+	return true, nil
+}

@@ -44,6 +44,9 @@ var buildCmd = &cobra.Command{
 			binaries := []map[string]string{{"name": info.Name, "path": "."}}
 			viper.Set("build.binaries", binaries)
 		}
+		if err := hasRequiredConfigurations("repository.path"); err != nil {
+			fatal(err)
+		}
 	},
 }
 
