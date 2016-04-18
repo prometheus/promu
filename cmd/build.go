@@ -124,11 +124,15 @@ func getLdflags(info ProjectInfo) string {
 		ldflags = append(ldflags, fmt.Sprintf("-X main.Version=%s", info.Version))
 	}
 
-	if goos == "darwin" && !stringInSlice("-s", ldflags) {
-		// Fixes dwarf error: golang/go#11994
-		ldflags = append(ldflags, "-s")
-	} else if !stringInSlice(`-extldflags "-static"`, ldflags) {
-		ldflags = append(ldflags, `-extldflags "-static"`)
+	if goos == "darwin" {
+		if !stringInSlice("-s", ldflags) {
+			// Fixes dwarf error: golang/go#11994
+			ldflags = append(ldflags, "-s")
+		}
+	} else {
+		if !stringInSlice(`-extldflags "-static"`, ldflags) {
+			ldflags = append(ldflags, `-extldflags "-static"`)
+		}
 	}
 
 	return strings.Join(ldflags[:], " ")
