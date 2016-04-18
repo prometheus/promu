@@ -91,8 +91,9 @@ func runBuild() {
 
 	os.Setenv("GO15VENDOREXPERIMENT", "1")
 
-	err := viper.UnmarshalKey("build.binaries", &binaries)
-	fatalMsg(err, "Failed to Unmashal binaries")
+	if err := viper.UnmarshalKey("build.binaries", &binaries); err != nil {
+		fatalMsg("Failed to Unmashal binaries", err)
+	}
 
 	for _, binary := range binaries {
 		binaryName := fmt.Sprintf("%s%s", binary.Name, ext)
@@ -117,10 +118,13 @@ func getLdflags(info ProjectInfo) string {
 		)
 
 		tmpl, err := template.New("ldflags").Funcs(fnMap).Parse(ldflagsTmpl)
-		fatalMsg(err, "Failed to parse ldflags text/template")
+		if err != nil {
+			fatalMsg("Failed to parse ldflags text/template", err)
+		}
 
-		err = tmpl.Execute(tmplOutput, info)
-		fatalMsg(err, "Failed to execute ldflags text/template")
+		if err := tmpl.Execute(tmplOutput, info); err != nil {
+			fatalMsg("Failed to execute ldflags text/template", err)
+		}
 
 		ldflags = append(ldflags, strings.Split(tmplOutput.String(), "\n")...)
 	} else {

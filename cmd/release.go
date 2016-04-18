@@ -49,8 +49,9 @@ func runRelease(tarballsLocation string) {
 		shell.Trace = true
 	}
 
-	err := filepath.Walk(tarballsLocation, uploadTarball)
-	fatalMsg(err, "Failed to upload tarballs")
+	if err := filepath.Walk(tarballsLocation, uploadTarball); err != nil {
+		fatalMsg("Failed to upload tarballs", err)
+	}
 }
 
 func uploadTarball(path string, f os.FileInfo, err error) error {

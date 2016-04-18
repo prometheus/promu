@@ -99,18 +99,14 @@ func initConfig() {
 
 // fatal prints a error and exit
 func fatal(err error) {
-	if err != nil {
-		fmt.Println("!!", err)
-		os.Exit(1)
-	}
+	fmt.Println("!!", err)
+	os.Exit(1)
 }
 
 // fatalMsg prints a message and exit
-func fatalMsg(err error, msg string) {
-	if err != nil {
-		fmt.Printf("!! %s: %s\n", msg, err)
-		os.Exit(1)
-	}
+func fatalMsg(msg string, err error) {
+	fmt.Printf("!! %s: %s\n", msg, err)
+	os.Exit(1)
 }
 
 // shellOutput executes a shell command and return the trimmed output
@@ -129,7 +125,9 @@ func fileExists(path ...string) bool {
 	if os.IsNotExist(err) || finfo.IsDir() {
 		return false
 	}
-	fatal(err)
+	if err != nil {
+		fatal(err)
+	}
 	return true
 }
 
@@ -169,8 +167,8 @@ func stringInSlice(needle string, haystack []string) bool {
 func hasRequiredConfigurations(configVars ...string) error {
 	for _, configVar := range configVars {
 		if !viper.IsSet(configVar) {
-			return false, fmt.Errorf("missing required '%s' configuration", configVar)
+			return fmt.Errorf("missing required '%s' configuration", configVar)
 		}
 	}
-	return true, nil
+	return nil
 }
