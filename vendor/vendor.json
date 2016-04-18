@@ -73,6 +73,12 @@
 			"revisionTime": "2015-12-21T22:31:49+01:00"
 		},
 		{
+			"checksumSHA1": "9mjAkIoPrJdiGcR0pBa81NoFY4U=",
+			"path": "github.com/mcuadros/go-version",
+			"revision": "d52711f8d6bea8dc01efafdb68ad95a4e2606630",
+			"revisionTime": "2014-12-06T21:13:39Z"
+		},
+		{
 			"path": "github.com/mitchellh/mapstructure",
 			"revision": "d2dd0262208475919e1a362f675cfc0e7c10e905",
 			"revisionTime": "2016-02-11T19:18:39-08:00"
@@ -117,5 +123,6 @@
 			"revision": "f7716cbe52baa25d2e9b0d0da546fcf909fc16b4",
 			"revisionTime": "2015-12-01T14:27:45-02:00"
 		}
-	]
+	],
+	"rootPath": "github.com/prometheus/promu"
 }
