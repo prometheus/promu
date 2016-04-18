@@ -43,7 +43,9 @@ func init() {
 func runCrossbuildTarballs() {
 
 	dirs, err := ioutil.ReadDir(".build")
-	fatal(err)
+	if err != nil {
+		fatal(err)
+	}
 
 	fmt.Println(">> building release tarballs")
 	for _, dir := range dirs {
@@ -53,8 +55,9 @@ func runCrossbuildTarballs() {
 			os.Setenv("GOOS", platform[0])
 			os.Setenv("GOARCH", platform[1])
 		} else {
-			err := fmt.Errorf("bad .build/%s directory naming, should be <GOOS>-<GOARCH>", platform)
-			fatal(err)
+			if err := fmt.Errorf("bad .build/%s directory naming, should be <GOOS>-<GOARCH>", platform); err != nil {
+				fatal(err)
+			}
 		}
 
 		runTarball(filepath.Join(".build", dir.Name()))

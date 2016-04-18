@@ -75,7 +75,7 @@ func runTarball(binariesLocation string) {
 	dir := filepath.Join(tmpDir, name)
 
 	if err := os.MkdirAll(dir, 0777); err != nil {
-		fatalMsg(err, "Failed to create directory")
+		fatalMsg("Failed to create directory", err)
 	}
 	defer sh("rm -rf", tmpDir)
 
@@ -84,8 +84,9 @@ func runTarball(binariesLocation string) {
 		sh("cp -a", file, dir)
 	}
 
-	err := viper.UnmarshalKey("build.binaries", &binaries)
-	fatalMsg(err, "Failed to Unmashal binaries")
+	if err := viper.UnmarshalKey("build.binaries", &binaries); err != nil {
+		fatalMsg("Failed to Unmashal binaries", err)
+	}
 
 	for _, binary := range binaries {
 		binaryName := fmt.Sprintf("%s%s", binary.Name, ext)

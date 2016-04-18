@@ -66,6 +66,9 @@ var crossbuildCmd = &cobra.Command{
 		if !viper.IsSet("crossbuild.platforms.mips") {
 			viper.Set("crossbuild.platforms.mips", defaultMIPSPlatforms)
 		}
+		if err := hasRequiredConfigurations("repository.path"); err != nil {
+			fatal(err)
+		}
 	},
 }
 
@@ -74,14 +77,12 @@ func init() {
 	Promu.AddCommand(crossbuildCmd)
 
 	crossbuildCmd.Flags().String("go", "", "Golang builder version to use")
-	crossbuildCmd.Flags().String("repo-path", "", "Project repository path")
 	crossbuildCmd.Flags().String("main", "", "Main platforms to build")
 	crossbuildCmd.Flags().String("arm", "", "ARM platforms to build")
 	crossbuildCmd.Flags().String("powerpc", "", "PowerPC platforms to build")
 	crossbuildCmd.Flags().String("mips", "", "MIPS platforms to build")
 
 	viper.BindPFlag("go", crossbuildCmd.Flags().Lookup("go"))
-	viper.BindPFlag("repository.path", crossbuildCmd.Flags().Lookup("repo-path"))
 	viper.BindPFlag("crossbuild.platforms.main", crossbuildCmd.Flags().Lookup("main"))
 	viper.BindPFlag("crossbuild.platforms.arm", crossbuildCmd.Flags().Lookup("arm"))
 	viper.BindPFlag("crossbuild.platforms.powerpc", crossbuildCmd.Flags().Lookup("powerpc"))
