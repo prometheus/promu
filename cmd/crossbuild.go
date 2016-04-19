@@ -125,27 +125,31 @@ func runCrossbuild() {
 
 	if mainPlatformsParam := strings.Join(mainPlatforms[:], " "); mainPlatformsParam != "" {
 		fmt.Println("> running the main builder docker image")
-		sh("docker run --rm -t -v $PWD:/app",
-			dockerMainBuilderImage, "-i", repoPath, "-p", q(mainPlatformsParam))
+		if err := docker("run --rm -t -v $PWD:/app", dockerMainBuilderImage, "-i", repoPath, "-p", q(mainPlatformsParam)); err != nil {
+			fatalMsg("The main builder docker image exited unexpectedly", err)
+		}
 	}
 
 	if armPlatformsParam := strings.Join(armPlatforms[:], " "); armPlatformsParam != "" {
 		fmt.Println("> running the ARM builder docker image")
-		sh("docker run --rm -t -v $PWD:/app",
-			dockerARMBuilderImage, "-i", repoPath, "-p", q(armPlatformsParam))
+		if err := docker("run --rm -t -v $PWD:/app", dockerARMBuilderImage, "-i", repoPath, "-p", q(armPlatformsParam)); err != nil {
+			fatalMsg("The ARM builder docker image exited unexpectedly", err)
+		}
 	}
 
 	if powerPCPlatformsParam := strings.Join(powerPCPlatforms[:], " "); powerPCPlatformsParam != "" {
 		fmt.Println("> running the PowerPC builder docker image")
-		sh("docker run --rm -t -v $PWD:/app",
-			dockerPowerPCBuilderImage, "-i", repoPath, "-p", q(powerPCPlatformsParam))
+		if err := docker("run --rm -t -v $PWD:/app", dockerPowerPCBuilderImage, "-i", repoPath, "-p", q(powerPCPlatformsParam)); err != nil {
+			fatalMsg("The PowerPC builder docker image exited unexpectedly", err)
+		}
 	}
 
 	if mipsPlatformsParam := strings.Join(mipsPlatforms[:], " "); mipsPlatformsParam != "" {
 		if version.Compare(goVersion, "1.6", ">=") {
 			fmt.Println("> running the MIPS builder docker image")
-			sh("docker run --rm -t -v $PWD:/app",
-				dockerMIPSBuilderImage, "-i", repoPath, "-p", q(mipsPlatformsParam))
+			if err := docker("run --rm -t -v $PWD:/app", dockerMIPSBuilderImage, "-i", repoPath, "-p", q(mipsPlatformsParam)); err != nil {
+				fatalMsg("The MIPS builder docker image exited unexpectedly", err)
+			}
 		} else {
 			warn(fmt.Errorf("MIPS architectures are only available with Go 1.6+"))
 		}
