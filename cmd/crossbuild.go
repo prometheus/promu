@@ -26,7 +26,7 @@ import (
 )
 
 var (
-	dockerBuilderImageName = "prom/golang-builder"
+	dockerBuilderImageName = "quay.io/prometheus/golang-builder"
 
 	defaultGoVersion     = "1.5.4"
 	defaultMainPlatforms = []string{
