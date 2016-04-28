@@ -54,13 +54,6 @@ var crossbuildCmd = &cobra.Command{
 		runCrossbuild()
 	},
 	PreRun: func(cmd *cobra.Command, args []string) {
-		if !viper.IsSet("crossbuild.platforms") {
-			platforms := defaultMainPlatforms
-			platforms = append(platforms, defaultARMPlatforms...)
-			platforms = append(platforms, defaultPowerPCPlatforms...)
-			platforms = append(platforms, defaultMIPSPlatforms...)
-			viper.Set("crossbuild.platforms", platforms)
-		}
 		if err := hasRequiredConfigurations("repository.path"); err != nil {
 			fatal(err)
 		}

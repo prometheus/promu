@@ -37,13 +37,6 @@ var buildCmd = &cobra.Command{
 		runBuild()
 	},
 	PreRun: func(cmd *cobra.Command, args []string) {
-		if !viper.IsSet("build.prefix") {
-			viper.Set("build.prefix", ".")
-		}
-		if !viper.IsSet("build.binaries") {
-			binaries := []map[string]string{{"name": info.Name, "path": "."}}
-			viper.Set("build.binaries", binaries)
-		}
 		if err := hasRequiredConfigurations("repository.path"); err != nil {
 			fatal(err)
 		}

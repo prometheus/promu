@@ -33,11 +33,6 @@ var tarballCmd = &cobra.Command{
 		binariesLocation := optArg(args, 0, ".")
 		runTarball(binariesLocation)
 	},
-	PreRun: func(cmd *cobra.Command, args []string) {
-		if !viper.IsSet("tarball.prefix") {
-			viper.Set("tarball.prefix", ".")
-		}
-	},
 }
 
 // init prepares cobra flags

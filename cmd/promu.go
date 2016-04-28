@@ -23,7 +23,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/progrium/go-shell"
+	shell "github.com/progrium/go-shell"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -87,13 +87,33 @@ func initConfig() {
 	viper.AutomaticEnv() // read in environment variables that match
 
 	// If a config file is found, read it in.
-	err := viper.ReadInConfig()
+	if err := viper.ReadInConfig(); err != nil {
+		fatalMsg("Error in config file", err)
+	}
 	if verbose {
-		if err != nil {
-			fmt.Println("Error in config file:", err)
-		} else {
-			fmt.Println("Using config file:", viper.ConfigFileUsed())
-		}
+		fmt.Println("Using config file:", viper.ConfigFileUsed())
+	}
+
+	setDefaultConfigValues()
+}
+
+func setDefaultConfigValues() {
+	if !viper.IsSet("build.binaries") {
+		binaries := []map[string]string{{"name": info.Name, "path": "."}}
+		viper.Set("build.binaries", binaries)
+	}
+	if !viper.IsSet("build.prefix") {
+		viper.Set("build.prefix", ".")
+	}
+	if !viper.IsSet("crossbuild.platforms") {
+		platforms := defaultMainPlatforms
+		platforms = append(platforms, defaultARMPlatforms...)
+		platforms = append(platforms, defaultPowerPCPlatforms...)
+		platforms = append(platforms, defaultMIPSPlatforms...)
+		viper.Set("crossbuild.platforms", platforms)
+	}
+	if !viper.IsSet("tarball.prefix") {
+		viper.Set("tarball.prefix", ".")
 	}
 }
 
