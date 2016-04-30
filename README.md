@@ -1,4 +1,4 @@
-# Prometheus Utility Tool
+# Prometheus Utility Tool [![Build Status](https://travis-ci.org/prometheus/promu.svg)][travis]
 
 ## Usage
 
@@ -41,3 +41,6 @@ Refer to [CONTRIBUTING.md](CONTRIBUTING.md)
 ## License
 
 Apache License 2.0, see [LICENSE](LICENSE).
+
+
+[travis]: https://travis-ci.org/prometheus/promu
