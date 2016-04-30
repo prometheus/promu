@@ -17,9 +17,6 @@ pkgs  = $(shell $(GO) list ./... | grep -v /vendor/)
 
 PREFIX ?= $(shell pwd)
 
-ifdef DEBUG
-	bindata_flags = -debug
-endif
 
 all: format style vet build
 
