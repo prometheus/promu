@@ -31,6 +31,7 @@ import (
 var (
 	sh           = shell.Run
 	q            = shell.Quote
+	docker       = shell.Cmd("docker").ErrFn()
 	buildContext = build.Default
 	goos         = buildContext.GOOS
 	goarch       = buildContext.GOARCH
