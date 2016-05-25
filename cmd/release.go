@@ -70,6 +70,7 @@ func uploadTarball(path string, f os.FileInfo, err error) error {
 			"--tag", info.Version,
 			"--name", fileName,
 			"--file", path)
+		fmt.Println(" > uploaded", fileName)
 	}
 
 	return nil
