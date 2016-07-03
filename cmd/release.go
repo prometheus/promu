@@ -19,10 +19,18 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"time"
+
+	"github.com/prometheus/promu/util/retry"
 
 	"github.com/progrium/go-shell"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+)
+
+var (
+	githubRelease  = shell.Cmd("github-release").ErrFn()
+	allowedRetries int
 )
 
 // releaseCmd represents the release command
@@ -39,6 +47,8 @@ var releaseCmd = &cobra.Command{
 // init prepares cobra flags
 func init() {
 	Promu.AddCommand(releaseCmd)
+
+	releaseCmd.Flags().IntVar(&allowedRetries, "retry", 2, "Number of retries to perform when upload fails")
 }
 
 func runRelease(tarballsLocation string) {
@@ -49,12 +59,12 @@ func runRelease(tarballsLocation string) {
 		shell.Trace = true
 	}
 
-	if err := filepath.Walk(tarballsLocation, uploadTarball); err != nil {
-		fatalMsg("Failed to upload tarballs", err)
+	if err := filepath.Walk(tarballsLocation, releaseTarball); err != nil {
+		fatalMsg("Failed to upload all tarballs", err)
 	}
 }
 
-func uploadTarball(path string, f os.FileInfo, err error) error {
+func releaseTarball(path string, f os.FileInfo, err error) error {
 	fileName := filepath.Base(path)
 	tarPattern := fmt.Sprintf("%s-%s.*.tar.gz", info.Name, info.Version)
 
@@ -64,14 +74,29 @@ func uploadTarball(path string, f os.FileInfo, err error) error {
 	}
 
 	if matched {
-		sh("github-release upload",
-			"--user", info.Owner,
-			"--repo", info.Name,
-			"--tag", fmt.Sprintf("v%s", info.Version),
-			"--name", fileName,
-			"--file", path)
+		err := retry.Do(func(attempt int) (bool, error) {
+			var err error
+			err = uploadTarball(fileName, path)
+			if err != nil {
+				time.Sleep(2 * time.Second)
+			}
+			return attempt < allowedRetries+1, err
+		})
+		if err != nil {
+			fmt.Printf("Upload failed after %d attempts\n", allowedRetries+1)
+			return err
+		}
 		fmt.Println(" > uploaded", fileName)
 	}
 
 	return nil
+}
+
+func uploadTarball(fileName string, path string) error {
+	return githubRelease("upload",
+		"--user", info.Owner,
+		"--repo", info.Name,
+		"--tag", fmt.Sprintf("v%s", info.Version),
+		"--name", fileName,
+		"--file", path)
 }
