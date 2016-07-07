@@ -67,7 +67,7 @@ func uploadTarball(path string, f os.FileInfo, err error) error {
 		sh("github-release upload",
 			"--user", info.Owner,
 			"--repo", info.Name,
-			"--tag", info.Version,
+			"--tag", fmt.Sprintf("v%s", info.Version),
 			"--name", fileName,
 			"--file", path)
 		fmt.Println(" > uploaded", fileName)
