@@ -120,18 +120,18 @@ func setDefaultConfigValues() {
 
 // warn prints a non-fatal err
 func warn(err error) {
-	fmt.Println(`/!\`, err)
+	fmt.Fprintln(os.Stderr, `/!\`, err)
 }
 
 // fatal prints a error and exit
 func fatal(err error) {
-	fmt.Println("!!", err)
+	fmt.Fprintln(os.Stderr, "!!", err)
 	os.Exit(1)
 }
 
 // fatalMsg prints a fatal message alongside the error and exit
 func fatalMsg(msg string, err error) {
-	fmt.Printf("!! %s: %s\n", msg, err)
+	fmt.Fprintf(os.Stderr, "!! %s: %s\n", msg, err)
 	os.Exit(1)
 }
 

@@ -83,7 +83,7 @@ func releaseTarball(path string, f os.FileInfo, err error) error {
 			return attempt < allowedRetries+1, err
 		})
 		if err != nil {
-			fmt.Printf("Upload failed after %d attempts\n", allowedRetries+1)
+			fmt.Fprintf(os.Stderr, "Upload failed after %d attempts\n", allowedRetries+1)
 			return err
 		}
 		fmt.Println(" > uploaded", fileName)
