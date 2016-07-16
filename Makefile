@@ -12,29 +12,46 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-GO   := GO15VENDOREXPERIMENT=1 go
-pkgs  = $(shell $(GO) list ./... | grep -v /vendor/)
+GO           ?= GO15VENDOREXPERIMENT=1 go
+FIRST_GOPATH := $(firstword $(subst :, ,$(GOPATH)))
+PROMU        ?= $(FIRST_GOPATH)/bin/promu
+pkgs          = $(shell $(GO) list ./... | grep -v /vendor/)
 
-PREFIX ?= $(shell pwd)
+PREFIX       ?= $(shell pwd)
+BIN_DIR      ?= $(shell pwd)
 
 
-all: format style vet build
+all: format style vet test build
 
-build:
+build: $(PROMU)
 	@echo ">> building binaries"
-	@./scripts/build.sh $(PREFIX)
+	@$(PROMU) build --prefix $(PREFIX)
 
 format:
 	@echo ">> formatting code"
 	@$(GO) fmt $(pkgs)
 
+$(FIRST_GOPATH)/bin/promu promu:
+	@GOOS=$(shell uname -s | tr A-Z a-z) \
+		GOARCH=$(subst x86_64,amd64,$(patsubst i%86,386,$(shell uname -m))) \
+		$(GO) install github.com/prometheus/promu
+
 style:
 	@echo ">> checking code style"
 	@! gofmt -d $(shell find . -path ./vendor -prune -o -name '*.go' -print) | grep '^'
+
+tarball: $(PROMU)
+	@echo ">> building release tarball"
+	@$(PROMU) tarball --prefix $(PREFIX) $(BIN_DIR)
+
+test:
+	@echo ">> running tests"
+	@$(GO) test -short $(pkgs)
 
 vet:
 	@echo ">> vetting code"
 	@$(GO) vet $(pkgs)
 
 
-.PHONY: all build format style vet
+.PHONY: all build format promu style tarball test vet $(FIRST_GOPATH)/bin/promu
+
