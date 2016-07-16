@@ -30,11 +30,11 @@ if [ "$(go env GOOS)" = "windows" ]; then
 fi
 
 ldflags="
-  -X ${repo_path}/cmd.Version=${version}
-  -X ${repo_path}/cmd.Revision=${revision}
-  -X ${repo_path}/cmd.Branch=${branch}
-  -X ${repo_path}/cmd.BuildUser=${USER}@${host}
-  -X ${repo_path}/cmd.BuildDate=${build_date}"
+  -X ${repo_path}/vendor/github.com/prometheus/common/version.Version=${version}
+  -X ${repo_path}/vendor/github.com/prometheus/common/version.Revision=${revision}
+  -X ${repo_path}/vendor/github.com/prometheus/common/version.Branch=${branch}
+  -X ${repo_path}/vendor/github.com/prometheus/common/version.BuildUser=${USER}@${host}
+  -X ${repo_path}/vendor/github.com/prometheus/common/version.BuildDate=${build_date}"
 
 if [ "$(go env GOOS)" != "darwin"  ]; then
   ldflags="${ldflags} -extldflags \"-static\""
