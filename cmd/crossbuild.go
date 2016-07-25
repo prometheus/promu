@@ -28,7 +28,7 @@ import (
 var (
 	dockerBuilderImageName = "quay.io/prometheus/golang-builder"
 
-	defaultGoVersion     = "1.6.2"
+	defaultGoVersion     = "1.6.3"
 	defaultMainPlatforms = []string{
 		"linux/amd64", "linux/386", "darwin/amd64", "darwin/386", "windows/amd64", "windows/386",
 		"freebsd/amd64", "freebsd/386", "openbsd/amd64", "openbsd/386", "netbsd/amd64", "netbsd/386",
