@@ -137,7 +137,7 @@ func fatalMsg(msg string, err error) {
 
 // shellOutput executes a shell command and return the trimmed output
 func shellOutput(cmd string) string {
-	args := strings.Split(cmd, " ")
+	args := strings.Fields(cmd)
 	out, _ := exec.Command(args[0], args[1:]...).Output()
 	return strings.Trim(string(out), " \n")
 }
