@@ -58,7 +58,7 @@ func NewProjectInfo() ProjectInfo {
 		Name:     filepath.Base(repo),
 		Owner:    filepath.Base(filepath.Dir(repo)),
 		Repo:     repo,
-		Revision: shellOutput("git rev-parse --short HEAD"),
+		Revision: shellOutput("git rev-parse HEAD"),
 		Version:  version,
 	}
 }
