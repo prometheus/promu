@@ -16,19 +16,12 @@ package cmd
 
 import (
 	"fmt"
-	"runtime"
 
+	"github.com/prometheus/common/version"
 	"github.com/spf13/cobra"
 )
 
 var (
-	// Build information. Populated at build-time.
-	Version   string
-	Revision  string
-	Branch    string
-	BuildUser string
-	BuildDate string
-
 	short bool
 )
 
@@ -51,15 +44,9 @@ func init() {
 
 func runVersion() {
 	if short != false {
-		fmt.Printf(Version)
+		fmt.Printf(version.Version)
 		return
 	}
-	fmt.Println("Version:", Version)
-	fmt.Println("Revision:", Revision)
-	fmt.Println("Branch:", Branch)
-	fmt.Println("Build User:", BuildUser)
-	fmt.Println("Build Date:", BuildDate)
-	fmt.Println("Go Version:", runtime.Version())
-	fmt.Println("Go OS/Arch:", runtime.GOOS+"/"+runtime.GOARCH)
+	fmt.Println(version.Print("promu"))
 	return
 }
