@@ -28,7 +28,6 @@ import (
 var (
 	dockerBuilderImageName = "quay.io/prometheus/golang-builder"
 
-	defaultGoVersion     = "1.6.3"
 	defaultMainPlatforms = []string{
 		"linux/amd64", "linux/386", "darwin/amd64", "darwin/386", "windows/amd64", "windows/386",
 		"freebsd/amd64", "freebsd/386", "openbsd/amd64", "openbsd/386", "netbsd/amd64", "netbsd/386",
@@ -64,14 +63,16 @@ var crossbuildCmd = &cobra.Command{
 func init() {
 	Promu.AddCommand(crossbuildCmd)
 
+	crossbuildCmd.Flags().Bool("cgo", false, "Enable CGO using several docker images with different crossbuild toolchains.")
 	crossbuildCmd.Flags().String("go", "", "Golang builder version to use")
 	crossbuildCmd.Flags().StringP("platforms", "p", "", "Platforms to build")
 
-	viper.BindPFlag("go", crossbuildCmd.Flags().Lookup("go"))
 	viper.BindPFlag("crossbuild.platforms", crossbuildCmd.Flags().Lookup("platforms"))
+	viper.BindPFlag("go.cgo", crossbuildCmd.Flags().Lookup("cgo"))
+	viper.BindPFlag("go.version", crossbuildCmd.Flags().Lookup("go"))
 
-	viper.SetDefault("go", defaultGoVersion)
 	// Current bug in viper: SeDefault doesn't work with nested key
+	// viper.SetDefault("go.version", "1.6.3")
 	// platforms := defaultMainPlatforms
 	// platforms = append(platforms, defaultARMPlatforms...)
 	// platforms = append(platforms, defaultPowerPCPlatforms...)
@@ -94,10 +95,12 @@ func runCrossbuild() {
 		mipsPlatforms    []string
 		unknownPlatforms []string
 
-		goVersion = viper.GetString("go")
+		cgo       = viper.GetBool("go.cgo")
+		goVersion = viper.GetString("go.version")
 		repoPath  = viper.GetString("repository.path")
 		platforms = viper.GetStringSlice("crossbuild.platforms")
 
+		dockerBaseBuilderImage    = fmt.Sprintf("%s:%s-base", dockerBuilderImageName, goVersion)
 		dockerMainBuilderImage    = fmt.Sprintf("%s:%s-main", dockerBuilderImageName, goVersion)
 		dockerARMBuilderImage     = fmt.Sprintf("%s:%s-arm", dockerBuilderImageName, goVersion)
 		dockerPowerPCBuilderImage = fmt.Sprintf("%s:%s-powerpc", dockerBuilderImageName, goVersion)
@@ -113,7 +116,11 @@ func runCrossbuild() {
 		case stringInSlice(platform, defaultPowerPCPlatforms):
 			powerPCPlatforms = append(powerPCPlatforms, platform)
 		case stringInSlice(platform, defaultMIPSPlatforms):
-			mipsPlatforms = append(mipsPlatforms, platform)
+			if version.Compare(goVersion, "1.6", ">=") {
+				mipsPlatforms = append(mipsPlatforms, platform)
+			} else {
+				warn(fmt.Errorf("MIPS architectures are only available with Go 1.6+"))
+			}
 		default:
 			unknownPlatforms = append(unknownPlatforms, platform)
 		}
@@ -123,35 +130,47 @@ func runCrossbuild() {
 		warn(fmt.Errorf("unknown/unhandled platforms: %s", unknownPlatforms))
 	}
 
-	if mainPlatformsParam := strings.Join(mainPlatforms[:], " "); mainPlatformsParam != "" {
-		fmt.Println("> running the main builder docker image")
-		if err := docker("run --rm -t -v $PWD:/app", dockerMainBuilderImage, "-i", repoPath, "-p", q(mainPlatformsParam)); err != nil {
-			fatalMsg("The main builder docker image exited unexpectedly", err)
-		}
-	}
+	if !cgo {
+		// In non-CGO, use the base image without any crossbuild toolchain
+		var allPlatforms []string
+		allPlatforms = append(allPlatforms, mainPlatforms[:]...)
+		allPlatforms = append(allPlatforms, armPlatforms[:]...)
+		allPlatforms = append(allPlatforms, powerPCPlatforms[:]...)
+		allPlatforms = append(allPlatforms, mipsPlatforms[:]...)
 
-	if armPlatformsParam := strings.Join(armPlatforms[:], " "); armPlatformsParam != "" {
-		fmt.Println("> running the ARM builder docker image")
-		if err := docker("run --rm -t -v $PWD:/app", dockerARMBuilderImage, "-i", repoPath, "-p", q(armPlatformsParam)); err != nil {
-			fatalMsg("The ARM builder docker image exited unexpectedly", err)
+		pg := &platformGroup{"base", dockerBaseBuilderImage, allPlatforms}
+		if err := pg.Build(repoPath); err != nil {
+			fatalMsg(fmt.Sprintf("The %s builder docker image exited unexpectedly", pg.Name), err)
 		}
-	}
+	} else {
+		os.Setenv("CGO_ENABLED", "1")
+		defer os.Unsetenv("CGO_ENABLED")
 
-	if powerPCPlatformsParam := strings.Join(powerPCPlatforms[:], " "); powerPCPlatformsParam != "" {
-		fmt.Println("> running the PowerPC builder docker image")
-		if err := docker("run --rm -t -v $PWD:/app", dockerPowerPCBuilderImage, "-i", repoPath, "-p", q(powerPCPlatformsParam)); err != nil {
-			fatalMsg("The PowerPC builder docker image exited unexpectedly", err)
-		}
-	}
-
-	if mipsPlatformsParam := strings.Join(mipsPlatforms[:], " "); mipsPlatformsParam != "" {
-		if version.Compare(goVersion, "1.6", ">=") {
-			fmt.Println("> running the MIPS builder docker image")
-			if err := docker("run --rm -t -v $PWD:/app", dockerMIPSBuilderImage, "-i", repoPath, "-p", q(mipsPlatformsParam)); err != nil {
-				fatalMsg("The MIPS builder docker image exited unexpectedly", err)
+		for _, pg := range []platformGroup{
+			platformGroup{"main", dockerMainBuilderImage, mainPlatforms},
+			platformGroup{"ARM", dockerARMBuilderImage, armPlatforms},
+			platformGroup{"PowerPC", dockerPowerPCBuilderImage, powerPCPlatforms},
+			platformGroup{"MIPS", dockerMIPSBuilderImage, mipsPlatforms},
+		} {
+			if err := pg.Build(repoPath); err != nil {
+				fatalMsg(fmt.Sprintf("The %s builder docker image exited unexpectedly", pg.Name), err)
 			}
-		} else {
-			warn(fmt.Errorf("MIPS architectures are only available with Go 1.6+"))
 		}
 	}
+}
+
+type platformGroup struct {
+	Name        string
+	DockerImage string
+	Platforms   []string
+}
+
+func (pg platformGroup) Build(repoPath string) error {
+	if platformsParam := strings.Join(pg.Platforms[:], " "); platformsParam != "" {
+		fmt.Printf("> running the %s builder docker image\n", pg.Name)
+		if err := docker("run --rm -t -v $PWD:/app", pg.DockerImage, "-i", repoPath, "-p", q(platformsParam)); err != nil {
+			return err
+		}
+	}
+	return nil
 }

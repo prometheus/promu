@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"fmt"
 	"os"
-	"os/user"
 	"strings"
 	"text/template"
 	"time"
@@ -47,11 +46,14 @@ var buildCmd = &cobra.Command{
 func init() {
 	Promu.AddCommand(buildCmd)
 
+	buildCmd.Flags().Bool("cgo", false, "Enable CGO")
 	buildCmd.Flags().String("prefix", "", "Specific dir to store binaries (default is .)")
 
 	viper.BindPFlag("build.prefix", buildCmd.Flags().Lookup("prefix"))
+	viper.BindPFlag("go.cgo", buildCmd.Flags().Lookup("cgo"))
 }
 
+// Binary represents a built binary.
 type Binary struct {
 	Name string
 	Path string
@@ -66,6 +68,7 @@ func runBuild() {
 	}
 
 	var (
+		cgo      = viper.GetBool("go.cgo")
 		prefix   = viper.GetString("build.prefix")
 		repoPath = viper.GetString("repository.path")
 		flags    = viper.GetString("build.flags")
@@ -83,6 +86,10 @@ func runBuild() {
 	ldflag := fmt.Sprintf("-ldflags \"%s\"", ldflags)
 
 	os.Setenv("GO15VENDOREXPERIMENT", "1")
+	if cgo {
+		os.Setenv("CGO_ENABLED", "1")
+		defer os.Unsetenv("CGO_ENABLED")
+	}
 
 	if err := viper.UnmarshalKey("build.binaries", &binaries); err != nil {
 		fatalMsg("Failed to Unmashal binaries", err)
@@ -138,14 +145,13 @@ func getLdflags(info ProjectInfo) string {
 	return strings.Join(ldflags[:], " ")
 }
 
+// UserFunc returns the current username.
 func UserFunc() (interface{}, error) {
-	user, err := user.Current()
-	if err != nil {
-		return nil, fmt.Errorf("Failed to get current user : %s", err)
-	}
-	return user.Username, nil
+	// os/user.Current() doesn't always work without CGO
+	return shellOutput("whoami"), nil
 }
 
+// RepoPathFunc returns the repository path.
 func RepoPathFunc() interface{} {
 	return viper.GetString("repository.path")
 }
