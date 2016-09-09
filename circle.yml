@@ -1,6 +1,6 @@
 machine:
   environment:
-    DOCKER_TEST_IMAGE_NAME: quay.io/prometheus/golang-builder:1.6.3-main
+    DOCKER_TEST_IMAGE_NAME: quay.io/prometheus/golang-builder:1.6-base
     REPO_PATH: github.com/prometheus/promu
     FULL_REPO_PATH: ${GOPATH%%:*}/src/$REPO_PATH
   pre:
