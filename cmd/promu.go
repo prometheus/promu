@@ -145,7 +145,7 @@ func fatalMsg(msg string, err error) {
 func shellOutput(cmd string) string {
 	args := strings.Fields(cmd)
 	out, _ := exec.Command(args[0], args[1:]...).Output()
-	return strings.Trim(string(out), " \n")
+	return strings.Trim(string(out), " \n\r")
 }
 
 // fileExists checks if a file exists
@@ -169,7 +169,7 @@ func readFile(path string) string {
 	if err != nil {
 		return ""
 	}
-	return strings.Trim(string(data), "\n ")
+	return strings.Trim(string(data), "\n\r ")
 }
 
 func optArg(args []string, i int, def string) string {
