@@ -21,11 +21,11 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/prometheus/promu/util/retry"
-
 	"github.com/progrium/go-shell"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	"github.com/prometheus/promu/util/retry"
 )
 
 var (

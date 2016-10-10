@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"path"
 	"strings"
 	"text/template"
 	"time"
@@ -25,6 +26,8 @@ import (
 	shell "github.com/progrium/go-shell"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	"github.com/prometheus/promu/util/sh"
 )
 
 // buildCmd represents the build command
@@ -83,7 +86,6 @@ func runBuild() {
 	}
 
 	ldflags = getLdflags(info)
-	ldflag := fmt.Sprintf("-ldflags \"%s\"", ldflags)
 
 	os.Setenv("GO15VENDOREXPERIMENT", "1")
 	if cgo {
@@ -98,7 +100,17 @@ func runBuild() {
 	for _, binary := range binaries {
 		binaryName := fmt.Sprintf("%s%s", binary.Name, ext)
 		fmt.Printf(" >   %s\n", binaryName)
-		sh("go build", flags, ldflag, "-o", shell.Path(prefix, binaryName), shell.Path(repoPath, binary.Path))
+
+		params := []string{"build",
+			"-o", path.Join(prefix, binaryName),
+			"-ldflags", ldflags,
+		}
+		params = append(params, sh.SplitParameters(flags)...)
+		params = append(params, path.Join(repoPath, binary.Path))
+		err := sh.RunCommand("go", params...)
+		if err != nil {
+			fmt.Println("command failed:", err)
+		}
 	}
 }
 
@@ -137,8 +149,8 @@ func getLdflags(info ProjectInfo) string {
 			ldflags = append(ldflags, "-s")
 		}
 	} else {
-		if !stringInSlice(`-extldflags "-static"`, ldflags) {
-			ldflags = append(ldflags, `-extldflags "-static"`)
+		if !stringInSlice(`-extldflags '-static'`, ldflags) {
+			ldflags = append(ldflags, `-extldflags '-static'`)
 		}
 	}
 

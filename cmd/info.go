@@ -51,7 +51,7 @@ func NewProjectInfo() ProjectInfo {
 	repo := repoLocation()
 	version, err := findVersion()
 	if err != nil {
-		fatalMsg("Unable to find project's version", err)
+		fmt.Println("Unable to find project's version", err)
 	}
 	return ProjectInfo{
 		Branch:   shellOutput("git rev-parse --abbrev-ref HEAD"),

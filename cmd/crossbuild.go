@@ -23,6 +23,8 @@ import (
 	"github.com/progrium/go-shell"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	"github.com/prometheus/promu/util/sh"
 )
 
 var (
@@ -168,7 +170,7 @@ type platformGroup struct {
 func (pg platformGroup) Build(repoPath string) error {
 	if platformsParam := strings.Join(pg.Platforms[:], " "); platformsParam != "" {
 		fmt.Printf("> running the %s builder docker image\n", pg.Name)
-		if err := docker("run --rm -t -v $PWD:/app", pg.DockerImage, "-i", repoPath, "-p", q(platformsParam)); err != nil {
+		if err := docker("run --rm -t -v $PWD:/app", pg.DockerImage, "-i", repoPath, "-p", sh.Quote(platformsParam)); err != nil {
 			return err
 		}
 	}
