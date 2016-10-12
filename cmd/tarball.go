@@ -22,6 +22,8 @@ import (
 	"github.com/progrium/go-shell"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	"github.com/prometheus/promu/util/sh"
 )
 
 // tarballCmd represents the tarball command
@@ -72,11 +74,11 @@ func runTarball(binariesLocation string) {
 	if err := os.MkdirAll(dir, 0777); err != nil {
 		fatalMsg("Failed to create directory", err)
 	}
-	defer sh("rm -rf", tmpDir)
+	defer sh.RunCommand("rm", "-rf", tmpDir)
 
 	projectFiles := viper.GetStringSlice("tarball.files")
 	for _, file := range projectFiles {
-		sh("cp -a", file, dir)
+		sh.RunCommand("cp", "-a", file, dir)
 	}
 
 	if err := viper.UnmarshalKey("build.binaries", &binaries); err != nil {
@@ -85,7 +87,7 @@ func runTarball(binariesLocation string) {
 
 	for _, binary := range binaries {
 		binaryName := fmt.Sprintf("%s%s", binary.Name, ext)
-		sh("cp -a", shell.Path(binariesLocation, binaryName), dir)
+		sh.RunCommand("cp", "-a", shell.Path(binariesLocation, binaryName), dir)
 	}
 
 	if !fileExists(prefix) {
@@ -94,5 +96,5 @@ func runTarball(binariesLocation string) {
 
 	tar := fmt.Sprintf("%s.tar.gz", name)
 	fmt.Println(" >  ", tar)
-	sh("tar zcf", shell.Path(prefix, tar), "-C", tmpDir, name)
+	sh.RunCommand("tar", "zcf", shell.Path(prefix, tar), "-C", tmpDir, name)
 }
