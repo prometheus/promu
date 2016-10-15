@@ -16,7 +16,7 @@ Available Commands:
   crossbuild  Crossbuild a Go project using Golang builder Docker images
   info        Print info about current project and exit
   release     Upload tarballs to the Github release
-  tarball     Create a tarball from the builded Go project
+  tarball     Create a tarball from the built Go project
   version     Print the version and exit
 
 Flags:
