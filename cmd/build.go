@@ -107,9 +107,8 @@ func runBuild() {
 		}
 		params = append(params, sh.SplitParameters(flags)...)
 		params = append(params, path.Join(repoPath, binary.Path))
-		err := sh.RunCommand("go", params...)
-		if err != nil {
-			fmt.Println("command failed:", err)
+		if err := sh.RunCommand("go", params...); err != nil {
+			fatalMsg("command failed: "+strings.Join(params, " "), err)
 		}
 	}
 }
