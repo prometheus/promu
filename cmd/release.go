@@ -65,6 +65,13 @@ func runRelease(tarballsLocation string) {
 }
 
 func releaseTarball(path string, f os.FileInfo, err error) error {
+	if err != nil {
+		return err
+	}
+	if f.IsDir() {
+		return nil
+	}
+
 	fileName := filepath.Base(path)
 	tarPattern := fmt.Sprintf("%s-%s.*.tar.gz", info.Name, info.Version)
 
