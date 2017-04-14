@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 	"time"
 
 	"github.com/progrium/go-shell"
@@ -35,12 +34,11 @@ var (
 
 // releaseCmd represents the release command
 var releaseCmd = &cobra.Command{
-	Use:   "release [<tarballs-location>]",
-	Short: "Upload tarballs to the Github release",
-	Long:  `Upload tarballs to the Github release`,
+	Use:   "release [<location>]",
+	Short: "Upload all release files to the Github release",
+	Long:  `Upload all release files to the Github release`,
 	Run: func(cmd *cobra.Command, args []string) {
-		tarballsLocation := optArg(args, 0, ".")
-		runRelease(tarballsLocation)
+		runRelease(optArg(args, 0, "."))
 	},
 }
 
@@ -51,7 +49,7 @@ func init() {
 	releaseCmd.Flags().IntVar(&allowedRetries, "retry", 2, "Number of retries to perform when upload fails")
 }
 
-func runRelease(tarballsLocation string) {
+func runRelease(location string) {
 	defer shell.ErrExit()
 	shell.Tee = os.Stdout
 
@@ -59,12 +57,12 @@ func runRelease(tarballsLocation string) {
 		shell.Trace = true
 	}
 
-	if err := filepath.Walk(tarballsLocation, releaseTarball); err != nil {
-		fatalMsg("Failed to upload all tarballs", err)
+	if err := filepath.Walk(location, releaseFile); err != nil {
+		fatalMsg("Failed to upload all files", err)
 	}
 }
 
-func releaseTarball(path string, f os.FileInfo, err error) error {
+func releaseFile(path string, f os.FileInfo, err error) error {
 	if err != nil {
 		return err
 	}
@@ -72,38 +70,28 @@ func releaseTarball(path string, f os.FileInfo, err error) error {
 		return nil
 	}
 
-	fileName := filepath.Base(path)
-	tarPattern := fmt.Sprintf("%s-%s.*.tar.gz", info.Name, info.Version)
-
-	matched, err := regexp.MatchString(tarPattern, fileName)
-	if err != nil {
-		return err
-	}
-
-	if matched {
-		err := retry.Do(func(attempt int) (bool, error) {
-			var err error
-			err = uploadTarball(fileName, path)
-			if err != nil {
-				time.Sleep(2 * time.Second)
-			}
-			return attempt < allowedRetries+1, err
-		})
+	filename := filepath.Base(path)
+	maxAttempts := allowedRetries + 1
+	err = retry.Do(func(attempt int) (bool, error) {
+		err := uploadFile(filename, path)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Upload failed after %d attempts\n", allowedRetries+1)
-			return err
+			time.Sleep(2 * time.Second)
 		}
-		fmt.Println(" > uploaded", fileName)
+		return attempt < maxAttempts, err
+	})
+	if err != nil {
+		return fmt.Errorf("failed to upload %q after %d attempts", filename, maxAttempts)
 	}
+	fmt.Println(" > uploaded", filename)
 
 	return nil
 }
 
-func uploadTarball(fileName string, path string) error {
+func uploadFile(filename string, path string) error {
 	return githubRelease("upload",
 		"--user", info.Owner,
 		"--repo", info.Name,
 		"--tag", fmt.Sprintf("v%s", info.Version),
-		"--name", fileName,
+		"--name", filename,
 		"--file", path)
 }
