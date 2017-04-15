@@ -30,5 +30,6 @@ deployment:
     owner: prometheus
     commands:
       - promu crossbuild tarballs
+      - promu checksum .tarballs
       - promu release .tarballs
       - mkdir $CIRCLE_ARTIFACTS/releases/ && cp -a .tarballs/* $CIRCLE_ARTIFACTS/releases/
