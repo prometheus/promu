@@ -149,10 +149,10 @@ func runCrossbuild() {
 		defer os.Unsetenv("CGO_ENABLED")
 
 		for _, pg := range []platformGroup{
-			platformGroup{"main", dockerMainBuilderImage, mainPlatforms},
-			platformGroup{"ARM", dockerARMBuilderImage, armPlatforms},
-			platformGroup{"PowerPC", dockerPowerPCBuilderImage, powerPCPlatforms},
-			platformGroup{"MIPS", dockerMIPSBuilderImage, mipsPlatforms},
+			{"main", dockerMainBuilderImage, mainPlatforms},
+			{"ARM", dockerARMBuilderImage, armPlatforms},
+			{"PowerPC", dockerPowerPCBuilderImage, powerPCPlatforms},
+			{"MIPS", dockerMIPSBuilderImage, mipsPlatforms},
 		} {
 			if err := pg.Build(repoPath); err != nil {
 				fatalMsg(fmt.Sprintf("The %s builder docker image exited unexpectedly", pg.Name), err)
