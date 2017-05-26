@@ -23,6 +23,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/pkg/errors"
 	shell "github.com/progrium/go-shell"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -94,7 +95,7 @@ func runBuild() {
 	}
 
 	if err := viper.UnmarshalKey("build.binaries", &binaries); err != nil {
-		fatalMsg("Failed to Unmashal binaries", err)
+		fatal(errors.Wrap(err, "Failed to Unmashal binaries"))
 	}
 
 	for _, binary := range binaries {
@@ -108,7 +109,7 @@ func runBuild() {
 		params = append(params, sh.SplitParameters(flags)...)
 		params = append(params, path.Join(repoPath, binary.Path))
 		if err := sh.RunCommand("go", params...); err != nil {
-			fatalMsg("command failed: "+strings.Join(params, " "), err)
+			fatal(errors.Wrap(err, "command failed: "+strings.Join(params, " ")))
 		}
 	}
 }
@@ -130,11 +131,11 @@ func getLdflags(info ProjectInfo) string {
 
 		tmpl, err := template.New("ldflags").Funcs(fnMap).Parse(ldflagsTmpl)
 		if err != nil {
-			fatalMsg("Failed to parse ldflags text/template", err)
+			fatal(errors.Wrap(err, "Failed to parse ldflags text/template"))
 		}
 
 		if err := tmpl.Execute(tmplOutput, info); err != nil {
-			fatalMsg("Failed to execute ldflags text/template", err)
+			fatal(errors.Wrap(err, "Failed to execute ldflags text/template"))
 		}
 
 		ldflags = append(ldflags, strings.Split(tmplOutput.String(), "\n")...)

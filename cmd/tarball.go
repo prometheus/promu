@@ -19,6 +19,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/pkg/errors"
 	"github.com/progrium/go-shell"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -72,7 +73,7 @@ func runTarball(binariesLocation string) {
 	dir := filepath.Join(tmpDir, name)
 
 	if err := os.MkdirAll(dir, 0777); err != nil {
-		fatalMsg("Failed to create directory", err)
+		fatal(errors.Wrap(err, "Failed to create directory"))
 	}
 	defer sh.RunCommand("rm", "-rf", tmpDir)
 
@@ -82,7 +83,7 @@ func runTarball(binariesLocation string) {
 	}
 
 	if err := viper.UnmarshalKey("build.binaries", &binaries); err != nil {
-		fatalMsg("Failed to Unmashal binaries", err)
+		fatal(errors.Wrap(err, "Failed to Unmashal binaries"))
 	}
 
 	for _, binary := range binaries {

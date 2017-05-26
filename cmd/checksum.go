@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -48,17 +49,17 @@ func init() {
 func runChecksum(path string) {
 	checksums, err := calculateSHA256s(path)
 	if err != nil {
-		fatalMsg("Failed to calculate checksums", err)
+		fatal(errors.Wrap(err, "Failed to calculate checksums"))
 	}
 
 	file, err := os.Create(filepath.Join(path, checksumsFilename))
 	if err != nil {
-		fatalMsg("Failed to create checksums file", err)
+		fatal(errors.Wrap(err, "Failed to create checksums file"))
 	}
 	defer file.Close()
 	for _, c := range checksums {
 		if _, err := fmt.Fprintf(file, "%x  %s\n", c.checksum, c.filename); err != nil {
-			fatalMsg("Failed to write to checksums file", err)
+			fatal(errors.Wrap(err, "Failed to write to checksums file"))
 		}
 	}
 }

@@ -20,6 +20,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/progrium/go-shell"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -58,7 +59,7 @@ func runRelease(location string) {
 	}
 
 	if err := filepath.Walk(location, releaseFile); err != nil {
-		fatalMsg("Failed to upload all files", err)
+		fatal(errors.Wrap(err, "Failed to upload all files"))
 	}
 }
 
@@ -80,7 +81,7 @@ func releaseFile(path string, f os.FileInfo, err error) error {
 		return attempt < maxAttempts, err
 	})
 	if err != nil {
-		return fmt.Errorf("failed to upload %q after %d attempts", filename, maxAttempts)
+		return errors.Wrapf(err, "failed to upload %q after %d attempts", filename, maxAttempts)
 	}
 	fmt.Println(" > uploaded", filename)
 

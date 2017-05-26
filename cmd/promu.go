@@ -23,6 +23,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/pkg/errors"
 	shell "github.com/progrium/go-shell"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -42,9 +43,10 @@ var (
 
 // This represents the base command when called without any subcommands
 var Promu = &cobra.Command{
-	Use:   "promu",
-	Short: "promu is the utility tool for Prometheus projects",
-	Long:  `promu is the utility tool for Prometheus projects`,
+	Use:           "promu",
+	Short:         "promu is the utility tool for Prometheus projects",
+	Long:          `promu is the utility tool for Prometheus projects`,
+	SilenceErrors: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		cmd.Help()
 	},
@@ -54,8 +56,8 @@ var Promu = &cobra.Command{
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	if err := Promu.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(-1)
+		printErr(err)
+		os.Exit(2)
 	}
 }
 
@@ -87,7 +89,7 @@ func initConfig() {
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err != nil {
-		fatalMsg("Error in config file", err)
+		fatal(errors.Wrap(err, "Error in config file"))
 	}
 	if verbose {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
@@ -122,20 +124,27 @@ func setDefaultConfigValues() {
 	}
 }
 
-// warn prints a non-fatal err
+// warn prints a non-fatal error
 func warn(err error) {
-	fmt.Fprintln(os.Stderr, `/!\`, err)
+	if verbose {
+		fmt.Fprintf(os.Stderr, `/!\ %+v\n`, err)
+	} else {
+		fmt.Fprintln(os.Stderr, `/!\`, err)
+	}
+}
+
+// printErr prints a error
+func printErr(err error) {
+	if verbose {
+		fmt.Fprintf(os.Stderr, "!! %+v\n", err)
+	} else {
+		fmt.Fprintln(os.Stderr, "!!", err)
+	}
 }
 
 // fatal prints a error and exit
 func fatal(err error) {
-	fmt.Fprintln(os.Stderr, "!!", err)
-	os.Exit(1)
-}
-
-// fatalMsg prints a fatal message alongside the error and exit
-func fatalMsg(msg string, err error) {
-	fmt.Fprintf(os.Stderr, "!! %s: %s\n", msg, err)
+	printErr(err)
 	os.Exit(1)
 }
 
@@ -197,7 +206,7 @@ func stringInSlice(needle string, haystack []string) bool {
 func hasRequiredConfigurations(configVars ...string) error {
 	for _, configVar := range configVars {
 		if !viper.IsSet(configVar) {
-			return fmt.Errorf("missing required '%s' configuration", configVar)
+			return errors.Errorf("missing required '%s' configuration", configVar)
 		}
 	}
 	return nil
