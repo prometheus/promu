@@ -15,11 +15,11 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"path/filepath"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -51,7 +51,7 @@ func NewProjectInfo() ProjectInfo {
 	repo := repoLocation()
 	version, err := findVersion()
 	if err != nil {
-		fmt.Println("Unable to find project's version", err)
+		warn(errors.Wrap(err, "Unable to find project's version"))
 	}
 	return ProjectInfo{
 		Branch:   shellOutput("git rev-parse --abbrev-ref HEAD"),

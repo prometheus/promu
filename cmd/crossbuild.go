@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"github.com/mcuadros/go-version"
+	"github.com/pkg/errors"
 	"github.com/progrium/go-shell"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -121,7 +122,7 @@ func runCrossbuild() {
 			if version.Compare(goVersion, "1.6", ">=") {
 				mipsPlatforms = append(mipsPlatforms, platform)
 			} else {
-				warn(fmt.Errorf("MIPS architectures are only available with Go 1.6+"))
+				warn(errors.New("MIPS architectures are only available with Go 1.6+"))
 			}
 		default:
 			unknownPlatforms = append(unknownPlatforms, platform)
@@ -129,7 +130,7 @@ func runCrossbuild() {
 	}
 
 	if len(unknownPlatforms) > 0 {
-		warn(fmt.Errorf("unknown/unhandled platforms: %s", unknownPlatforms))
+		warn(errors.Errorf("unknown/unhandled platforms: %s", unknownPlatforms))
 	}
 
 	if !cgo {
@@ -142,7 +143,7 @@ func runCrossbuild() {
 
 		pg := &platformGroup{"base", dockerBaseBuilderImage, allPlatforms}
 		if err := pg.Build(repoPath); err != nil {
-			fatalMsg(fmt.Sprintf("The %s builder docker image exited unexpectedly", pg.Name), err)
+			fatal(errors.Wrapf(err, "The %s builder docker image exited unexpectedly", pg.Name))
 		}
 	} else {
 		os.Setenv("CGO_ENABLED", "1")
@@ -155,7 +156,7 @@ func runCrossbuild() {
 			{"MIPS", dockerMIPSBuilderImage, mipsPlatforms},
 		} {
 			if err := pg.Build(repoPath); err != nil {
-				fatalMsg(fmt.Sprintf("The %s builder docker image exited unexpectedly", pg.Name), err)
+				fatal(errors.Wrapf(err, "The %s builder docker image exited unexpectedly", pg.Name))
 			}
 		}
 	}
