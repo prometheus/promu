@@ -37,13 +37,20 @@ var (
 		"dragonfly/amd64",
 	}
 	defaultARMPlatforms = []string{
-		"linux/arm", "linux/arm64", "freebsd/arm", "openbsd/arm", "netbsd/arm",
+		"linux/armv5", "linux/armv6", "linux/armv7", "linux/arm64", "freebsd/armv6", "freebsd/armv7",
+		"openbsd/armv7", "netbsd/armv6", "netbsd/armv7",
 	}
 	defaultPowerPCPlatforms = []string{
 		"linux/ppc64", "linux/ppc64le",
 	}
 	defaultMIPSPlatforms = []string{
 		"linux/mips64", "linux/mips64le",
+	}
+	armPlatformsAliases = map[string][]string{
+		"linux/arm":   {"linux/armv5", "linux/armv6", "linux/armv7"},
+		"freebsd/arm": {"freebsd/armv6", "freebsd/armv7"},
+		"openbsd/arm": {"openbsd/armv7"},
+		"netbsd/arm":  {"netbsd/armv6", "netbsd/armv7"},
 	}
 )
 
@@ -124,6 +131,8 @@ func runCrossbuild() {
 			} else {
 				warn(errors.New("MIPS architectures are only available with Go 1.6+"))
 			}
+		case stringInMapKeys(platform, armPlatformsAliases):
+			armPlatforms = append(armPlatforms, armPlatformsAliases[platform]...)
 		default:
 			unknownPlatforms = append(unknownPlatforms, platform)
 		}
