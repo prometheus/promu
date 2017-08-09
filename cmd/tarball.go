@@ -20,7 +20,6 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
-	"github.com/progrium/go-shell"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -48,13 +47,6 @@ func init() {
 }
 
 func runTarball(binariesLocation string) {
-	defer shell.ErrExit()
-	shell.Tee = os.Stdout
-
-	if viper.GetBool("verbose") {
-		shell.Trace = true
-	}
-
 	var (
 		prefix = viper.GetString("tarball.prefix")
 		tmpDir = ".release"
@@ -88,7 +80,7 @@ func runTarball(binariesLocation string) {
 
 	for _, binary := range binaries {
 		binaryName := fmt.Sprintf("%s%s", binary.Name, ext)
-		sh.RunCommand("cp", "-a", shell.Path(binariesLocation, binaryName), dir)
+		sh.RunCommand("cp", "-a", filepath.Join(binariesLocation, binaryName), dir)
 	}
 
 	if !fileExists(prefix) {
@@ -97,5 +89,5 @@ func runTarball(binariesLocation string) {
 
 	tar := fmt.Sprintf("%s.tar.gz", name)
 	fmt.Println(" >  ", tar)
-	sh.RunCommand("tar", "zcf", shell.Path(prefix, tar), "-C", tmpDir, name)
+	sh.RunCommand("tar", "zcf", filepath.Join(prefix, tar), "-C", tmpDir, name)
 }
