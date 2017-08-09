@@ -155,9 +155,6 @@ func runCrossbuild() {
 			fatal(errors.Wrapf(err, "The %s builder docker image exited unexpectedly", pg.Name))
 		}
 	} else {
-		os.Setenv("CGO_ENABLED", "1")
-		defer os.Unsetenv("CGO_ENABLED")
-
 		for _, pg := range []platformGroup{
 			{"main", dockerMainBuilderImage, mainPlatforms},
 			{"ARM", dockerARMBuilderImage, armPlatforms},

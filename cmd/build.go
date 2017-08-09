@@ -89,10 +89,12 @@ func runBuild() {
 	ldflags = getLdflags(info)
 
 	os.Setenv("GO15VENDOREXPERIMENT", "1")
+	defer os.Unsetenv("GO15VENDOREXPERIMENT")
+	os.Setenv("CGO_ENABLED", "0")
 	if cgo {
 		os.Setenv("CGO_ENABLED", "1")
-		defer os.Unsetenv("CGO_ENABLED")
 	}
+	defer os.Unsetenv("CGO_ENABLED")
 
 	if err := viper.UnmarshalKey("build.binaries", &binaries); err != nil {
 		fatal(errors.Wrap(err, "Failed to Unmashal binaries"))
