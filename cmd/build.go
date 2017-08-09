@@ -39,10 +39,8 @@ var buildCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		runBuild()
 	},
-	PreRun: func(cmd *cobra.Command, args []string) {
-		if err := hasRequiredConfigurations("repository.path"); err != nil {
-			fatal(err)
-		}
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		return hasRequiredConfigurations("repository.path")
 	},
 }
 

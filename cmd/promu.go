@@ -34,9 +34,9 @@ var (
 	buildContext = build.Default
 	goos         = buildContext.GOOS
 	goarch       = buildContext.GOARCH
-	info         = NewProjectInfo()
 
 	cfgFile  string
+	info     ProjectInfo
 	useViper bool
 	verbose  bool
 )
@@ -47,6 +47,14 @@ var Promu = &cobra.Command{
 	Short:         "promu is the utility tool for Prometheus projects",
 	Long:          `promu is the utility tool for Prometheus projects`,
 	SilenceErrors: true,
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		var err error
+		info, err = NewProjectInfo()
+		if err != nil {
+			return err
+		}
+		return initConfig()
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		cmd.Help()
 	},
@@ -63,8 +71,6 @@ func Execute() {
 
 // init prepares cobra flags
 func init() {
-	cobra.OnInitialize(initConfig)
-
 	Promu.PersistentFlags().StringVar(&cfgFile, "config", "", "Config file (default is ./.promu.yml)")
 	Promu.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Verbose output")
 	Promu.PersistentFlags().BoolVar(&useViper, "viper", true, "Use Viper for configuration")
@@ -74,9 +80,9 @@ func init() {
 }
 
 // initConfig reads in config file and ENV variables if set.
-func initConfig() {
+func initConfig() error {
 	if useViper != true {
-		return
+		return nil
 	}
 	if cfgFile != "" { // enable ability to specify config file via flag
 		viper.SetConfigFile(cfgFile)
@@ -89,13 +95,14 @@ func initConfig() {
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err != nil {
-		fatal(errors.Wrap(err, "Error in config file"))
+		return errors.Wrap(err, "Error in config file")
 	}
 	if verbose {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
 	}
 
 	setDefaultConfigValues()
+	return nil
 }
 
 func setDefaultConfigValues() {
@@ -121,6 +128,9 @@ func setDefaultConfigValues() {
 	}
 	if !viper.IsSet("go.cgo") {
 		viper.Set("go.cgo", false)
+	}
+	if !viper.IsSet("repository.path") {
+		viper.Set("repository.path", info.Repo)
 	}
 }
 

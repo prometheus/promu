@@ -16,6 +16,9 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
+	"os/user"
 	"path/filepath"
 	"strings"
 
@@ -38,6 +41,7 @@ func init() {
 	Promu.AddCommand(infoCmd)
 }
 
+// ProjectInfo represents current project useful informations.
 type ProjectInfo struct {
 	Branch   string
 	Name     string
@@ -47,20 +51,52 @@ type ProjectInfo struct {
 	Version  string
 }
 
-func NewProjectInfo() ProjectInfo {
-	repo := repoLocation()
+// NewProjectInfo returns a new ProjectInfo.
+func NewProjectInfo() (ProjectInfo, error) {
+	projectInfo := ProjectInfo{}
+
+	cmd := exec.Command("git", "rev-parse", "--show-toplevel")
+	cmd.Stdout = nil
+	cmd.Stderr = nil
+	if err := cmd.Run(); err != nil {
+		repo, err := os.Getwd()
+		if err != nil {
+			return projectInfo, errors.Wrapf(err, "Couldn't get current working directory")
+		}
+		repo = strings.TrimPrefix(repo, os.Getenv("GOPATH"))
+		repo = strings.TrimPrefix(repo, "/src/")
+
+		user, err := user.Current()
+		if err != nil {
+			return projectInfo, errors.Wrapf(err, "Couldn't get current user")
+		}
+
+		projectInfo = ProjectInfo{
+			Branch:   "non-git",
+			Name:     filepath.Base(repo),
+			Owner:    user.Username,
+			Repo:     repo,
+			Revision: "non-git",
+		}
+	} else {
+		repo := repoLocation()
+		projectInfo = ProjectInfo{
+			Branch:   shellOutput("git rev-parse --abbrev-ref HEAD"),
+			Name:     filepath.Base(repo),
+			Owner:    filepath.Base(filepath.Dir(repo)),
+			Repo:     repo,
+			Revision: shellOutput("git rev-parse HEAD"),
+		}
+	}
+
 	version, err := findVersion()
 	if err != nil {
 		warn(errors.Wrap(err, "Unable to find project's version"))
+	} else {
+		projectInfo.Version = version
 	}
-	return ProjectInfo{
-		Branch:   shellOutput("git rev-parse --abbrev-ref HEAD"),
-		Name:     filepath.Base(repo),
-		Owner:    filepath.Base(filepath.Dir(repo)),
-		Repo:     repo,
-		Revision: shellOutput("git rev-parse HEAD"),
-		Version:  version,
-	}
+
+	return projectInfo, nil
 }
 
 func runInfo() {
