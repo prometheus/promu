@@ -180,9 +180,10 @@
 			"revisionTime": "2015-12-29T23:11:39-07:00"
 		},
 		{
+			"checksumSHA1": "eIhF+hmL/XZhzTiAwhLD0M65vlY=",
 			"path": "gopkg.in/fsnotify.v1",
-			"revision": "8611c35ab31c1c28aa903d33cf8b6e44a399b09e",
-			"revisionTime": "2016-01-10T16:04:37+01:00"
+			"revision": "629574ca2a5df945712d3079857300b5e4da0236",
+			"revisionTime": "2016-10-11T02:33:12Z"
 		},
 		{
 			"path": "gopkg.in/yaml.v2",
