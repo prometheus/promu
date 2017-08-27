@@ -160,9 +160,10 @@
 			"revisionTime": "2015-11-26T07:42:19+01:00"
 		},
 		{
+			"checksumSHA1": "233z49QwgSzdLglskKTSdI/CPQ8=",
 			"path": "github.com/spf13/cobra",
-			"revision": "65a708cee0a4424f4e353d031ce440643e312f92",
-			"revisionTime": "2016-02-08T02:29:17+08:00"
+			"revision": "b26b538f693051ac6518e65672de3144ce3fbedc",
+			"revisionTime": "2017-07-31T17:04:27Z"
 		},
 		{
 			"path": "github.com/spf13/jwalterweatherman",
@@ -170,9 +171,10 @@
 			"revisionTime": "2015-10-14T12:42:31+05:30"
 		},
 		{
+			"checksumSHA1": "STxYqRb4gnlSr3mRpT+Igfdz/kM=",
 			"path": "github.com/spf13/pflag",
-			"revision": "7f60f83a2c81bc3c3c0d5297f61ddfa68da9d3b7",
-			"revisionTime": "2015-10-24T12:54:09+02:00"
+			"revision": "e57e3eeb33f795204c1ca35f56c44f83227c6e66",
+			"revisionTime": "2017-05-08T18:43:26Z"
 		},
 		{
 			"path": "github.com/spf13/viper",
