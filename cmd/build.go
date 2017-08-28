@@ -32,11 +32,11 @@ import (
 
 // buildCmd represents the build command
 var buildCmd = &cobra.Command{
-	Use:   "build",
+	Use:   "build [<binary-names>]",
 	Short: "Build a Go project",
 	Long:  `Build a Go project`,
 	Run: func(cmd *cobra.Command, args []string) {
-		runBuild()
+		runBuild(optArg(args, 0, "all"))
 	},
 	PreRunE: func(cmd *cobra.Command, args []string) error {
 		return hasRequiredConfigurations("repository.path")
@@ -60,12 +60,53 @@ type Binary struct {
 	Path string
 }
 
-func runBuild() {
+// Check if binary names passed to build command are in the config.
+// Returns an array of Binary to build, or error.
+func validateBinaryNames(binaryNames []string, cfgBinaries []Binary) ([]Binary, error) {
+	var binaries []Binary
+
+OUTER:
+	for _, binaryName := range binaryNames {
+		for _, binary := range cfgBinaries {
+			if binaryName == binary.Name {
+				binaries = append(binaries, binary)
+				continue OUTER
+			}
+		}
+		return nil, fmt.Errorf("binary %s not found in config\n", binaryName)
+	}
+	return binaries, nil
+}
+
+func buildBinary(ext string, prefix string, ldflags string, binary Binary) {
+	binaryName := fmt.Sprintf("%s%s", binary.Name, ext)
+	fmt.Printf(" >   %s\n", binaryName)
+
+	repoPath := viper.GetString("repository.path")
+	flags := viper.GetString("build.flags")
+
+	params := []string{"build",
+		"-o", path.Join(prefix, binaryName),
+		"-ldflags", ldflags,
+	}
+
+	params = append(params, sh.SplitParameters(flags)...)
+	params = append(params, path.Join(repoPath, binary.Path))
+	if err := sh.RunCommand("go", params...); err != nil {
+		fatal(errors.Wrap(err, "command failed: "+strings.Join(params, " ")))
+	}
+}
+
+func buildAll(ext string, prefix string, ldflags string, binaries []Binary) {
+	for _, binary := range binaries {
+		buildBinary(ext, prefix, ldflags, binary)
+	}
+}
+
+func runBuild(binariesString string) {
 	var (
-		cgo      = viper.GetBool("go.cgo")
-		prefix   = viper.GetString("build.prefix")
-		repoPath = viper.GetString("repository.path")
-		flags    = viper.GetString("build.flags")
+		cgo    = viper.GetBool("go.cgo")
+		prefix = viper.GetString("build.prefix")
 
 		ext      string
 		binaries []Binary
@@ -88,19 +129,19 @@ func runBuild() {
 		fatal(errors.Wrap(err, "Failed to Unmashal binaries"))
 	}
 
-	for _, binary := range binaries {
-		binaryName := fmt.Sprintf("%s%s", binary.Name, ext)
-		fmt.Printf(" >   %s\n", binaryName)
+	if binariesString == "all" {
+		buildAll(ext, prefix, ldflags, binaries)
+		return
+	}
 
-		params := []string{"build",
-			"-o", path.Join(prefix, binaryName),
-			"-ldflags", ldflags,
-		}
-		params = append(params, sh.SplitParameters(flags)...)
-		params = append(params, path.Join(repoPath, binary.Path))
-		if err := sh.RunCommand("go", params...); err != nil {
-			fatal(errors.Wrap(err, "command failed: "+strings.Join(params, " ")))
-		}
+	binariesArray := strings.Split(binariesString, ",")
+	binariesToBuild, err := validateBinaryNames(binariesArray, binaries)
+	if err != nil {
+		fatal(errors.Wrap(err, "validation of given binary names for build command failed"))
+	}
+
+	for _, binary := range binariesToBuild {
+		buildBinary(ext, prefix, ldflags, binary)
 	}
 }
 
