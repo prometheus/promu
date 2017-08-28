@@ -15,13 +15,14 @@
 GO           ?= GO15VENDOREXPERIMENT=1 go
 FIRST_GOPATH := $(firstword $(subst :, ,$(shell $(GO) env GOPATH)))
 PROMU        ?= $(FIRST_GOPATH)/bin/promu
+STATICCHECK  ?= $(FIRST_GOPATH)/bin/staticcheck
 pkgs          = $(shell $(GO) list ./... | grep -v /vendor/)
 
 PREFIX       ?= $(shell pwd)
 BIN_DIR      ?= $(shell pwd)
 
 
-all: format style vet test build
+all: format style vet staticcheck test build
 
 build: $(PROMU)
 	@echo ">> building binaries"
@@ -35,6 +36,9 @@ $(FIRST_GOPATH)/bin/promu promu:
 	@GOOS=$(shell uname -s | tr A-Z a-z) \
 		GOARCH=$(subst x86_64,amd64,$(patsubst i%86,386,$(patsubst arm%,arm,$(shell uname -m)))) \
 		$(GO) install github.com/prometheus/promu
+
+$(FIRST_GOPATH)/bin/staticcheck:
+	@GOOS= GOARCH= $(GO) get -u honnef.co/go/tools/cmd/staticcheck
 
 style:
 	@echo ">> checking code style"
@@ -52,6 +56,8 @@ vet:
 	@echo ">> vetting code"
 	@$(GO) vet $(pkgs)
 
+staticcheck: $(STATICCHECK)
+	@echo ">> running staticcheck"
+	@$(STATICCHECK) $(pkgs)
 
-.PHONY: all build format promu style tarball test vet $(FIRST_GOPATH)/bin/promu
-
+.PHONY: all build format promu style tarball test vet staticcheck $(FIRST_GOPATH)/bin/promu $(FIRST_GOPATH)/bin/staticcheck
