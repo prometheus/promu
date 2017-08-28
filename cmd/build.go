@@ -24,7 +24,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	shell "github.com/progrium/go-shell"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -62,13 +61,6 @@ type Binary struct {
 }
 
 func runBuild() {
-	defer shell.ErrExit()
-	shell.Tee = os.Stdout
-
-	if viper.GetBool("verbose") {
-		shell.Trace = true
-	}
-
 	var (
 		cgo      = viper.GetBool("go.cgo")
 		prefix   = viper.GetString("build.prefix")

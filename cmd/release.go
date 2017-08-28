@@ -21,15 +21,13 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/progrium/go-shell"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 
 	"github.com/prometheus/promu/util/retry"
+	"github.com/prometheus/promu/util/sh"
 )
 
 var (
-	githubRelease  = shell.Cmd("github-release").ErrFn()
 	allowedRetries int
 )
 
@@ -51,13 +49,6 @@ func init() {
 }
 
 func runRelease(location string) {
-	defer shell.ErrExit()
-	shell.Tee = os.Stdout
-
-	if viper.GetBool("verbose") {
-		shell.Trace = true
-	}
-
 	if err := filepath.Walk(location, releaseFile); err != nil {
 		fatal(errors.Wrap(err, "Failed to upload all files"))
 	}
@@ -89,7 +80,7 @@ func releaseFile(path string, f os.FileInfo, err error) error {
 }
 
 func uploadFile(filename string, path string) error {
-	return githubRelease("upload",
+	return sh.RunCommand("github-release", "upload",
 		"--user", info.Owner,
 		"--repo", info.Name,
 		"--tag", fmt.Sprintf("v%s", info.Version),

@@ -24,13 +24,11 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	shell "github.com/progrium/go-shell"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 var (
-	docker       = shell.Cmd("docker").ErrFn()
 	buildContext = build.Default
 	goos         = buildContext.GOOS
 	goarch       = buildContext.GOARCH
@@ -41,7 +39,7 @@ var (
 	verbose  bool
 )
 
-// This represents the base command when called without any subcommands
+// Promu represents the base command when called without any subcommands
 var Promu = &cobra.Command{
 	Use:           "promu",
 	Short:         "promu is the utility tool for Prometheus projects",

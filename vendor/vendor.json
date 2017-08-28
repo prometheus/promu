@@ -108,11 +108,6 @@
 			"revisionTime": "2017-05-05T04:36:39Z"
 		},
 		{
-			"path": "github.com/progrium/go-shell",
-			"revision": "af1cf5b0dbf1ce2fef7acc105de42857439b0cca",
-			"revisionTime": "2015-08-28T09:39:56-05:00"
-		},
-		{
 			"checksumSHA1": "E9hLErovYB3phLHwM/OoyL0d+hs=",
 			"path": "github.com/prometheus/client_golang/prometheus",
 			"revision": "28be15864ef9ba05d74fa6fd13b928fd250e8f01",
