@@ -78,8 +78,6 @@ func runBuild() {
 
 	ldflags = getLdflags(info)
 
-	os.Setenv("GO15VENDOREXPERIMENT", "1")
-	defer os.Unsetenv("GO15VENDOREXPERIMENT")
 	os.Setenv("CGO_ENABLED", "0")
 	if cgo {
 		os.Setenv("CGO_ENABLED", "1")
@@ -135,15 +133,8 @@ func getLdflags(info ProjectInfo) string {
 		ldflags = append(ldflags, fmt.Sprintf("-X main.Version=%s", info.Version))
 	}
 
-	if goos == "darwin" {
-		if !stringInSlice("-s", ldflags) {
-			// Fixes dwarf error: golang/go#11994
-			ldflags = append(ldflags, "-s")
-		}
-	} else {
-		if !stringInSlice(`-extldflags '-static'`, ldflags) {
-			ldflags = append(ldflags, `-extldflags '-static'`)
-		}
+	if goos != "darwin" && !stringInSlice(`-extldflags '-static'`, ldflags) {
+		ldflags = append(ldflags, `-extldflags '-static'`)
 	}
 
 	return strings.Join(ldflags[:], " ")

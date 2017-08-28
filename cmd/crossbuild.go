@@ -19,7 +19,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/mcuadros/go-version"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -116,11 +115,7 @@ func runCrossbuild() {
 		case stringInSlice(platform, defaultPowerPCPlatforms):
 			powerPCPlatforms = append(powerPCPlatforms, platform)
 		case stringInSlice(platform, defaultMIPSPlatforms):
-			if version.Compare(goVersion, "1.6", ">=") {
-				mipsPlatforms = append(mipsPlatforms, platform)
-			} else {
-				warn(errors.New("MIPS architectures are only available with Go 1.6+"))
-			}
+			mipsPlatforms = append(mipsPlatforms, platform)
 		case stringInMapKeys(platform, armPlatformsAliases):
 			armPlatforms = append(armPlatforms, armPlatformsAliases[platform]...)
 		default:

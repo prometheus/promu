@@ -4,7 +4,7 @@
 
 ## Usage
 
-```
+```help
 promu is the utility tool for Prometheus projects
 
 Usage:
@@ -31,10 +31,14 @@ Use "promu [command] --help" for more information about a command.
 
 See documentation example [here](doc/examples/.promu.yml)
 
+## Compatibility
+
+* Go 1.6+
+
 ## More information
 
-  * This tool is part of our reflexion about [Prometheus component Builds](https://docs.google.com/document/d/1Ql-f_aThl-2eB5v3QdKV_zgBdetLLbdxxChpy-TnWSE)
-  * All of the core developers are accessible via the [Prometheus Developers Mailinglist](https://groups.google.com/forum/?fromgroups#!forum/prometheus-developers) and the `#prometheus` channel on `irc.freenode.net`.
+* This tool is part of our reflexion about [Prometheus component Builds](https://docs.google.com/document/d/1Ql-f_aThl-2eB5v3QdKV_zgBdetLLbdxxChpy-TnWSE)
+* All of the core developers are accessible via the [Prometheus Developers Mailinglist](https://groups.google.com/forum/?fromgroups#!forum/prometheus-developers) and the `#prometheus` channel on `irc.freenode.net`.
 
 ## Contributing
 
@@ -44,7 +48,5 @@ Refer to [CONTRIBUTING.md](CONTRIBUTING.md)
 
 Apache License 2.0, see [LICENSE](LICENSE).
 
-
 [circleci]: https://circleci.com/gh/prometheus/promu
 [travis]: https://travis-ci.org/prometheus/promu
-
