@@ -76,14 +76,6 @@ func init() {
 	viper.BindPFlag("crossbuild.platforms", crossbuildCmd.Flags().Lookup("platforms"))
 	viper.BindPFlag("go.cgo", crossbuildCmd.Flags().Lookup("cgo"))
 	viper.BindPFlag("go.version", crossbuildCmd.Flags().Lookup("go"))
-
-	// Current bug in viper: SeDefault doesn't work with nested key
-	// viper.SetDefault("go.version", "1.8.3")
-	// platforms := defaultMainPlatforms
-	// platforms = append(platforms, defaultARMPlatforms...)
-	// platforms = append(platforms, defaultPowerPCPlatforms...)
-	// platforms = append(platforms, defaultMIPSPlatforms...)
-	// viper.SetDefault("crossbuild.platforms", platforms)
 }
 
 func runCrossbuild() {

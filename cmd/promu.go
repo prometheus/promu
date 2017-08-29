@@ -99,37 +99,21 @@ func initConfig() error {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
 	}
 
-	setDefaultConfigValues()
-	return nil
-}
+	viper.SetDefault("build.binaries", []map[string]string{{"name": info.Name, "path": "."}})
+	viper.SetDefault("build.prefix", ".")
 
-func setDefaultConfigValues() {
-	if !viper.IsSet("build.binaries") {
-		binaries := []map[string]string{{"name": info.Name, "path": "."}}
-		viper.Set("build.binaries", binaries)
-	}
-	if !viper.IsSet("build.prefix") {
-		viper.Set("build.prefix", ".")
-	}
-	if !viper.IsSet("crossbuild.platforms") {
-		platforms := defaultMainPlatforms
-		platforms = append(platforms, defaultARMPlatforms...)
-		platforms = append(platforms, defaultPowerPCPlatforms...)
-		platforms = append(platforms, defaultMIPSPlatforms...)
-		viper.Set("crossbuild.platforms", platforms)
-	}
-	if !viper.IsSet("tarball.prefix") {
-		viper.Set("tarball.prefix", ".")
-	}
-	if !viper.IsSet("go.version") {
-		viper.Set("go.version", "1.8.3")
-	}
-	if !viper.IsSet("go.cgo") {
-		viper.Set("go.cgo", false)
-	}
-	if !viper.IsSet("repository.path") {
-		viper.Set("repository.path", info.Repo)
-	}
+	platforms := defaultMainPlatforms
+	platforms = append(platforms, defaultARMPlatforms...)
+	platforms = append(platforms, defaultPowerPCPlatforms...)
+	platforms = append(platforms, defaultMIPSPlatforms...)
+	viper.SetDefault("crossbuild.platforms", platforms)
+
+	viper.SetDefault("tarball.prefix", ".")
+	viper.SetDefault("go.version", "1.8.3")
+	viper.SetDefault("go.cgo", false)
+	viper.SetDefault("repository.path", info.Repo)
+
+	return nil
 }
 
 // warn prints a non-fatal error
