@@ -180,6 +180,12 @@
 			"revisionTime": "2015-12-29T23:11:39-07:00"
 		},
 		{
+			"checksumSHA1": "yMZF9dXHnTzHIOvYzLfqvcsU4mQ=",
+			"path": "golang.org/x/sys/unix",
+			"revision": "07c182904dbd53199946ba614a412c61d3c548f5",
+			"revisionTime": "2017-08-16T12:26:40Z"
+		},
+		{
 			"checksumSHA1": "eIhF+hmL/XZhzTiAwhLD0M65vlY=",
 			"path": "gopkg.in/fsnotify.v1",
 			"revision": "629574ca2a5df945712d3079857300b5e4da0236",
