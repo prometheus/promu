@@ -16,10 +16,12 @@ package cmd
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"os/exec"
 	"os/user"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -79,7 +81,10 @@ func NewProjectInfo() (ProjectInfo, error) {
 			Revision: "non-git",
 		}
 	} else {
-		repo := repoLocation()
+		repo, err := repoLocation(shellOutput("git config --get remote.origin.url"))
+		if err != nil {
+			return projectInfo, errors.Wrapf(err, "Couldn't parse repo location")
+		}
 		projectInfo = ProjectInfo{
 			Branch:   shellOutput("git rev-parse --abbrev-ref HEAD"),
 			Name:     filepath.Base(repo),
@@ -108,13 +113,29 @@ func runInfo() {
 	fmt.Println("Revision:", info.Revision)
 }
 
-func repoLocation() string {
-	repo := shellOutput("git config --get remote.origin.url")
-	repo = strings.TrimPrefix(repo, "http://")
-	repo = strings.TrimPrefix(repo, "https://")
-	repo = strings.TrimPrefix(repo, "git@")
+// Convert SCP-like URL to SSH URL(e.g. [user@]host.xz:path/to/repo.git/)
+// ref. http://git-scm.com/docs/git-fetch#_git_urls
+// (golang hasn't supported Perl-like negative look-behind match)
+var hasSchemePattern = regexp.MustCompile("^[^:]+://")
+var scpLikeUrlPattern = regexp.MustCompile("^([^@]+@)?([^:]+):/?(.+)$")
+
+func repoLocation(repo string) (string, error) {
+	if !hasSchemePattern.MatchString(repo) && scpLikeUrlPattern.MatchString(repo) {
+		matched := scpLikeUrlPattern.FindStringSubmatch(repo)
+		user := matched[1]
+		host := matched[2]
+		path := matched[3]
+		repo = fmt.Sprintf("ssh://%s%s/%s", user, host, path)
+	}
+
+	u, err := url.Parse(repo)
+	if err != nil {
+		return "", err
+	}
+
+	repo = fmt.Sprintf("%s%s", strings.Split(u.Host, ":")[0], u.Path)
 	repo = strings.TrimSuffix(repo, ".git")
-	return strings.Replace(repo, ":", "/", -1)
+	return repo, nil
 }
 
 func findVersion() (string, error) {
