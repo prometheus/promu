@@ -129,7 +129,7 @@ func runBuild(binariesString string) {
 		fatal(errors.Wrap(err, "Failed to Unmashal binaries"))
 	}
 
-	if binariesString == "all" {
+	if binariesString == "all" || binariesString == "." {
 		buildAll(ext, prefix, ldflags, binaries)
 		return
 	}
