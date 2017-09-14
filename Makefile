@@ -32,8 +32,8 @@ format:
 	@$(GO) fmt $(pkgs)
 
 $(FIRST_GOPATH)/bin/promu promu:
-	@GOOS=$(go env GOOS) \
-		GOARCH=$(go env GOARCH) \
+	@GOOS=$(go env GOHOSTOS) \
+		GOARCH=$(go env GOHOSTARCH) \
 		$(GO) install github.com/prometheus/promu
 
 style:
