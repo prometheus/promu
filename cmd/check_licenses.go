@@ -27,8 +27,11 @@ import (
 
 var (
 	// validSourceExtensions is a slice of strings
-	// representing the file suffix of source code files to inspect
+	// representing the file suffix of source code files to inspect.
 	validSourceExtensions []string
+
+	// headerLength is the number of lines to read in.
+	headerLength int
 
 	// defaultSourceExtensions is a slice of strings
 	// representing the file suffix of source code files to inspect
@@ -46,7 +49,7 @@ var (
 and report those that are missing their header`,
 		Run: func(cmd *cobra.Command, args []string) {
 			fmt.Println(validSourceExtensions)
-			runCheckLicenses(optArg(args, 0, "."), validSourceExtensions)
+			runCheckLicenses(optArg(args, 0, "."), headerLength, validSourceExtensions)
 		},
 	}
 )
@@ -54,14 +57,15 @@ and report those that are missing their header`,
 // init prepares cobra flags and attaches the checkLicensesCmd to Promu
 func init() {
 	checkLicensesCmd.PersistentFlags().StringSliceVar(&validSourceExtensions, "extensions", defaultSourceExtensions, "comma separated list of valid source code extenstions (default is .go)")
+	checkLicensesCmd.PersistentFlags().IntVarP(&headerLength, "length", "n", 10, "The number of lines to read from the head of the file")
 
 	Promu.AddCommand(checkLicensesCmd)
 }
 
-func runCheckLicenses(path string, extensions []string) {
+func runCheckLicenses(path string, n int, extensions []string) {
 	path = fmt.Sprintf("%s%c", filepath.Clean(path), filepath.Separator)
 
-	filesMissingHeaders, err := checkLicenses(path, extensions)
+	filesMissingHeaders, err := checkLicenses(path, n, extensions)
 	if err != nil {
 		fatal(errors.Wrap(err, "Failed to check files for license header"))
 	}
@@ -71,7 +75,7 @@ func runCheckLicenses(path string, extensions []string) {
 	}
 }
 
-func checkLicenses(path string, extensions []string) ([]string, error) {
+func checkLicenses(path string, n int, extensions []string) ([]string, error) {
 	var missingHeaders []string
 	walkFunc := func(filepath string, f os.FileInfo, err error) error {
 		if err != nil {
@@ -99,7 +103,7 @@ func checkLicenses(path string, extensions []string) ([]string, error) {
 
 		pass := false
 		scanner := bufio.NewScanner(file)
-		for i := 0; i < 3; i++ {
+		for i := 0; i < n; i++ {
 			scanner.Scan()
 			if stringContainedInSlice(strings.ToLower(scanner.Text()), validHeaderStrings) {
 				pass = true
