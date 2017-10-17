@@ -42,8 +42,14 @@ var (
 	validHeaderStrings = []string{"copyright", "generated"}
 
 	// checkLicensesCmd represents the check_licenses command.
+	checkCmd = &cobra.Command{
+		Use:   "check",
+		Short: "Check the resources for validity",
+		Long:  `Check the resources for validity`,
+	}
+
 	checkLicensesCmd = &cobra.Command{
-		Use:   "check_licenses [<location>]",
+		Use:   "licenses [<location>]",
 		Short: "Inspect source files for each file in a given directory",
 		Long: `Inspect source files for each file in a given directory 
 and report those that are missing their header`,
@@ -59,7 +65,8 @@ func init() {
 	checkLicensesCmd.PersistentFlags().StringSliceVar(&validSourceExtensions, "extensions", defaultSourceExtensions, "comma separated list of valid source code extenstions (default is .go)")
 	checkLicensesCmd.PersistentFlags().IntVarP(&headerLength, "length", "n", 10, "The number of lines to read from the head of the file")
 
-	Promu.AddCommand(checkLicensesCmd)
+	checkCmd.AddCommand(checkLicensesCmd)
+	Promu.AddCommand(checkCmd)
 }
 
 func runCheckLicenses(path string, n int, extensions []string) {
