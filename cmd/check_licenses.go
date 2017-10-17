@@ -112,6 +112,11 @@ func checkLicenses(path string, n int, extensions []string) ([]string, error) {
 		scanner := bufio.NewScanner(file)
 		for i := 0; i < n; i++ {
 			scanner.Scan()
+
+			if err = scanner.Err(); err != nil {
+				return err
+			}
+
 			if stringContainedInSlice(strings.ToLower(scanner.Text()), validHeaderStrings) {
 				pass = true
 			}
