@@ -20,7 +20,7 @@ import (
 
 func TestRepoLocation(t *testing.T) {
 	var repoTests = []struct {
-		s string // input
+		s        string // input
 		expected string // expected result
 	}{
 		{"git@github.com:prometheus/promu.git", "github.com/prometheus/promu"},
