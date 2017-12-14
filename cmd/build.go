@@ -174,7 +174,7 @@ func getLdflags(info ProjectInfo) string {
 		ldflags = append(ldflags, fmt.Sprintf("-X main.Version=%s", info.Version))
 	}
 
-	if goos != "darwin" && !stringInSlice(`-extldflags '-static'`, ldflags) {
+	if goos != "darwin" && goos != "solaris" && !stringInSlice(`-extldflags '-static'`, ldflags) {
 		ldflags = append(ldflags, `-extldflags '-static'`)
 	}
 
