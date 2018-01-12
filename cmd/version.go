@@ -43,10 +43,9 @@ func init() {
 }
 
 func runVersion() {
-	if short != false {
+	if short {
 		fmt.Printf(version.Version)
-		return
+	} else {
+		fmt.Println(version.Print("promu"))
 	}
-	fmt.Println(version.Print("promu"))
-	return
 }
