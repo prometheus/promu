@@ -73,7 +73,7 @@ OUTER:
 				continue OUTER
 			}
 		}
-		return nil, fmt.Errorf("binary %s not found in config\n", binaryName)
+		return nil, fmt.Errorf("binary %s not found in config", binaryName)
 	}
 	return binaries, nil
 }

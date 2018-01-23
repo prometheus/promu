@@ -117,11 +117,11 @@ func runInfo() {
 // ref. http://git-scm.com/docs/git-fetch#_git_urls
 // (golang hasn't supported Perl-like negative look-behind match)
 var hasSchemePattern = regexp.MustCompile("^[^:]+://")
-var scpLikeUrlPattern = regexp.MustCompile("^([^@]+@)?([^:]+):/?(.+)$")
+var scpLikeURLPattern = regexp.MustCompile("^([^@]+@)?([^:]+):/?(.+)$")
 
 func repoLocation(repo string) (string, error) {
-	if !hasSchemePattern.MatchString(repo) && scpLikeUrlPattern.MatchString(repo) {
-		matched := scpLikeUrlPattern.FindStringSubmatch(repo)
+	if !hasSchemePattern.MatchString(repo) && scpLikeURLPattern.MatchString(repo) {
+		matched := scpLikeURLPattern.FindStringSubmatch(repo)
 		user := matched[1]
 		host := matched[2]
 		path := matched[3]

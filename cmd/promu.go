@@ -79,7 +79,7 @@ func init() {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() error {
-	if useViper != true {
+	if !useViper {
 		return nil
 	}
 	if cfgFile != "" { // enable ability to specify config file via flag

@@ -65,7 +65,7 @@ func releaseFile(path string, f os.FileInfo, err error) error {
 	filename := filepath.Base(path)
 	maxAttempts := allowedRetries + 1
 	err = retry.Do(func(attempt int) (bool, error) {
-		err := uploadFile(filename, path)
+		err = uploadFile(filename, path)
 		if err != nil {
 			time.Sleep(2 * time.Second)
 		}
