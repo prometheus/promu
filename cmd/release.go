@@ -21,32 +21,17 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
 
 	"github.com/prometheus/promu/util/retry"
 	"github.com/prometheus/promu/util/sh"
 )
 
 var (
-	allowedRetries int
+	releasecmd     = app.Command("release", "Upload all release files to the Github release")
+	allowedRetries = releasecmd.Flag("retry", "Number of retries to perform when upload fails").
+			Default("2").Int()
+	releaseLocation = releasecmd.Arg("location", "Location of files to release").Default(".").Strings()
 )
-
-// releaseCmd represents the release command
-var releaseCmd = &cobra.Command{
-	Use:   "release [<location>]",
-	Short: "Upload all release files to the Github release",
-	Long:  `Upload all release files to the Github release`,
-	Run: func(cmd *cobra.Command, args []string) {
-		runRelease(optArg(args, 0, "."))
-	},
-}
-
-// init prepares cobra flags
-func init() {
-	Promu.AddCommand(releaseCmd)
-
-	releaseCmd.Flags().IntVar(&allowedRetries, "retry", 2, "Number of retries to perform when upload fails")
-}
 
 func runRelease(location string) {
 	if err := filepath.Walk(location, releaseFile); err != nil {
@@ -63,7 +48,7 @@ func releaseFile(path string, f os.FileInfo, err error) error {
 	}
 
 	filename := filepath.Base(path)
-	maxAttempts := allowedRetries + 1
+	maxAttempts := *allowedRetries + 1
 	err = retry.Do(func(attempt int) (bool, error) {
 		err = uploadFile(filename, path)
 		if err != nil {
