@@ -17,6 +17,7 @@ package cmd
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"os"
 	"path"
 	"strings"
@@ -24,41 +25,27 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
+	kingpin "gopkg.in/alecthomas/kingpin.v2"
 
 	"github.com/prometheus/promu/util/sh"
 )
 
-// buildCmd represents the build command
-var buildCmd = &cobra.Command{
-	Use:   "build [<binary-names>]",
-	Short: "Build a Go project",
-	Long:  `Build a Go project`,
-	Run: func(cmd *cobra.Command, args []string) {
-		runBuild(optArg(args, 0, "all"))
-	},
-	PreRunE: func(cmd *cobra.Command, args []string) error {
-		return hasRequiredConfigurations("repository.path")
-	},
-}
-
-// init prepares cobra flags
-func init() {
-	Promu.AddCommand(buildCmd)
-
-	buildCmd.Flags().Bool("cgo", false, "Enable CGO")
-	buildCmd.Flags().String("prefix", "", "Specific dir to store binaries (default is .)")
-
-	viper.BindPFlag("build.prefix", buildCmd.Flags().Lookup("prefix"))
-	viper.BindPFlag("go.cgo", buildCmd.Flags().Lookup("cgo"))
-}
-
-// Binary represents a built binary.
-type Binary struct {
-	Name string
-	Path string
-}
+var (
+	buildcmd        = app.Command("build", "Build a Go project")
+	buildCgoFlagSet bool
+	buildCgoFlag    = buildcmd.Flag("cgo", "Enable CGO").
+			PreAction(func(c *kingpin.ParseContext) error {
+			buildCgoFlagSet = true
+			return nil
+		}).Bool()
+	prefixFlagSet bool
+	prefixFlag    = buildcmd.Flag("prefix", "Specific dir to store binaries (default is .)").
+			PreAction(func(c *kingpin.ParseContext) error {
+			prefixFlagSet = true
+			return nil
+		}).String()
+	binariesArg = buildcmd.Arg("binary-names", "List of binaries to build").Default("all").Strings()
+)
 
 // Check if binary names passed to build command are in the config.
 // Returns an array of Binary to build, or error.
@@ -79,11 +66,12 @@ OUTER:
 }
 
 func buildBinary(ext string, prefix string, ldflags string, binary Binary) {
+	info("Building binary: " + binary.Name)
 	binaryName := fmt.Sprintf("%s%s", binary.Name, ext)
 	fmt.Printf(" >   %s\n", binaryName)
 
-	repoPath := viper.GetString("repository.path")
-	flags := viper.GetString("build.flags")
+	repoPath := config.Repository.Path
+	flags := config.Build.Flags
 
 	params := []string{"build",
 		"-o", path.Join(prefix, binaryName),
@@ -92,6 +80,7 @@ func buildBinary(ext string, prefix string, ldflags string, binary Binary) {
 
 	params = append(params, sh.SplitParameters(flags)...)
 	params = append(params, path.Join(repoPath, binary.Path))
+	info("Building binary: " + "go " + strings.Join(params, " "))
 	if err := sh.RunCommand("go", params...); err != nil {
 		fatal(errors.Wrap(err, "command failed: "+strings.Join(params, " ")))
 	}
@@ -104,12 +93,23 @@ func buildAll(ext string, prefix string, ldflags string, binaries []Binary) {
 }
 
 func runBuild(binariesString string) {
+	//Check required configuration
+	if len(strings.TrimSpace(config.Repository.Path)) == 0 {
+		log.Fatalf("missing required '%s' configuration", "repository.path")
+	}
+	if buildCgoFlagSet {
+		config.Go.CGo = *buildCgoFlag
+	}
+	if prefixFlagSet {
+		config.Build.Prefix = *prefixFlag
+	}
+
 	var (
-		cgo    = viper.GetBool("go.cgo")
-		prefix = viper.GetString("build.prefix")
+		cgo    = config.Go.CGo
+		prefix = config.Build.Prefix
 
 		ext      string
-		binaries []Binary
+		binaries = config.Build.Binaries
 		ldflags  string
 	)
 
@@ -117,17 +117,13 @@ func runBuild(binariesString string) {
 		ext = ".exe"
 	}
 
-	ldflags = getLdflags(info)
+	ldflags = getLdflags(projInfo)
 
 	os.Setenv("CGO_ENABLED", "0")
 	if cgo {
 		os.Setenv("CGO_ENABLED", "1")
 	}
 	defer os.Unsetenv("CGO_ENABLED")
-
-	if err := viper.UnmarshalKey("build.binaries", &binaries); err != nil {
-		fatal(errors.Wrap(err, "Failed to Unmashal binaries"))
-	}
 
 	if binariesString == "all" {
 		buildAll(ext, prefix, ldflags, binaries)
@@ -148,7 +144,7 @@ func runBuild(binariesString string) {
 func getLdflags(info ProjectInfo) string {
 	var ldflags []string
 
-	if viper.IsSet("build.ldflags") {
+	if len(strings.TrimSpace(config.Build.LDFlags)) > 0 {
 		var (
 			tmplOutput = new(bytes.Buffer)
 			fnMap      = template.FuncMap{
@@ -157,7 +153,7 @@ func getLdflags(info ProjectInfo) string {
 				"repoPath": RepoPathFunc,
 				"user":     UserFunc,
 			}
-			ldflagsTmpl = viper.GetString("build.ldflags")
+			ldflagsTmpl = config.Build.LDFlags
 		)
 
 		tmpl, err := template.New("ldflags").Funcs(fnMap).Parse(ldflagsTmpl)
@@ -174,7 +170,7 @@ func getLdflags(info ProjectInfo) string {
 		ldflags = append(ldflags, fmt.Sprintf("-X main.Version=%s", info.Version))
 	}
 
-	staticBinary := viper.GetBool("build.static")
+	staticBinary := config.Build.Static
 	if staticBinary && goos != "darwin" && goos != "solaris" && !stringInSlice(`-extldflags '-static'`, ldflags) {
 		ldflags = append(ldflags, `-extldflags '-static'`)
 	}
@@ -190,5 +186,5 @@ func UserFunc() (interface{}, error) {
 
 // RepoPathFunc returns the repository path.
 func RepoPathFunc() interface{} {
-	return viper.GetString("repository.path")
+	return config.Repository.Path
 }

@@ -20,41 +20,34 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
+	kingpin "gopkg.in/alecthomas/kingpin.v2"
 
 	"github.com/prometheus/promu/util/sh"
 )
 
-// tarballCmd represents the tarball command
-var tarballCmd = &cobra.Command{
-	Use:   "tarball [<binaries-location>]",
-	Short: "Create a tarball from the builded Go project",
-	Long:  `Create a tarball from the builded Go project`,
-	Run: func(cmd *cobra.Command, args []string) {
-		binariesLocation := optArg(args, 0, ".")
-		runTarball(binariesLocation)
-	},
-}
+var (
+	tarballcmd = app.Command("tarball", "Create a tarball from the built Go project")
 
-// init prepares cobra flags
-func init() {
-	Promu.AddCommand(tarballCmd)
+	tarballPrefixSet bool
+	tarballPrefix    = tarballcmd.Flag("prefix", "Specific dir to store tarballs").
+				PreAction(func(c *kingpin.ParseContext) error {
+			tarballPrefixSet = true
+			return nil
+		}).
+		Default(".").String()
 
-	tarballCmd.Flags().String("prefix", "", "Specific dir to store tarballs (default is .)")
-
-	viper.BindPFlag("tarball.prefix", tarballCmd.Flags().Lookup("prefix"))
-}
+	tarBinariesLocation = tarballcmd.Arg("location", "location of binaries to tar").Default(".").Strings()
+)
 
 func runTarball(binariesLocation string) {
 	var (
-		prefix = viper.GetString("tarball.prefix")
+		prefix = config.Tarball.Prefix
 		tmpDir = ".release"
 		goos   = envOr("GOOS", goos)
 		goarch = envOr("GOARCH", goarch)
-		name   = fmt.Sprintf("%s-%s.%s-%s", info.Name, info.Version, goos, goarch)
+		name   = fmt.Sprintf("%s-%s.%s-%s", projInfo.Name, projInfo.Version, goos, goarch)
 
-		binaries []Binary
+		binaries = config.Build.Binaries
 		ext      string
 	)
 
@@ -69,13 +62,9 @@ func runTarball(binariesLocation string) {
 	}
 	defer sh.RunCommand("rm", "-rf", tmpDir)
 
-	projectFiles := viper.GetStringSlice("tarball.files")
+	projectFiles := config.Tarball.Files
 	for _, file := range projectFiles {
 		sh.RunCommand("cp", "-a", file, dir)
-	}
-
-	if err := viper.UnmarshalKey("build.binaries", &binaries); err != nil {
-		fatal(errors.Wrap(err, "Failed to Unmashal binaries"))
 	}
 
 	for _, binary := range binaries {

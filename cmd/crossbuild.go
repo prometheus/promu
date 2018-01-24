@@ -16,12 +16,12 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
+	kingpin "gopkg.in/alecthomas/kingpin.v2"
 
 	"github.com/prometheus/promu/util/sh"
 )
@@ -56,42 +56,52 @@ var (
 	}
 )
 
-// crossbuildCmd represents the crossbuild command
-var crossbuildCmd = &cobra.Command{
-	Use:   "crossbuild",
-	Short: "Crossbuild a Go project using Golang builder Docker images",
-	Long:  `Crossbuild a Go project using Golang builder Docker images`,
-	Run: func(cmd *cobra.Command, args []string) {
-		runCrossbuild()
-	},
-	PreRunE: func(cmd *cobra.Command, args []string) error {
-		return hasRequiredConfigurations("repository.path")
-	},
-}
-
-// init prepares cobra flags
-func init() {
-	Promu.AddCommand(crossbuildCmd)
-
-	crossbuildCmd.Flags().Bool("cgo", false, "Enable CGO using several docker images with different crossbuild toolchains.")
-	crossbuildCmd.Flags().String("go", "", "Golang builder version to use")
-	crossbuildCmd.Flags().StringP("platforms", "p", "", "Platforms to build")
-
-	viper.BindPFlag("crossbuild.platforms", crossbuildCmd.Flags().Lookup("platforms"))
-	viper.BindPFlag("go.cgo", crossbuildCmd.Flags().Lookup("cgo"))
-	viper.BindPFlag("go.version", crossbuildCmd.Flags().Lookup("go"))
-
-	// Current bug in viper: SeDefault doesn't work with nested key
-	// viper.SetDefault("go.version", "1.11")
-	// platforms := defaultMainPlatforms
-	// platforms = append(platforms, defaultARMPlatforms...)
-	// platforms = append(platforms, defaultPowerPCPlatforms...)
-	// platforms = append(platforms, defaultMIPSPlatforms...)
-	// platforms = append(platforms, defaultS390Platforms...)
-	// viper.SetDefault("crossbuild.platforms", platforms)
-}
+var (
+	crossbuildcmd        = app.Command("crossbuild", "Crossbuild a Go project using Golang builder Docker images")
+	crossBuildCgoFlagSet bool
+	crossBuildCgoFlag    = crossbuildcmd.Flag("cgo", "Enable CGO using several docker images with different crossbuild toolchains.").
+				PreAction(func(c *kingpin.ParseContext) error {
+			crossBuildCgoFlagSet = true
+			return nil
+		}).Default("false").Bool()
+	goFlagSet bool
+	goFlag    = crossbuildcmd.Flag("go", "Golang builder version to use (e.g. 1.11)").
+			PreAction(func(c *kingpin.ParseContext) error {
+			goFlagSet = true
+			return nil
+		}).String()
+	platformsFlagSet bool
+	platformsFlag    = crossbuildcmd.Flag("platforms", "Space separated list of platforms to build").Short('p').
+				PreAction(func(c *kingpin.ParseContext) error {
+			platformsFlagSet = true
+			return nil
+		}).Strings()
+	// kingpin doesn't currently support using the crossbuild command and the
+	// crossbuild tarball subcommand at the same time, so we treat the
+	// tarball subcommand as an optional arg
+	tarballsSubcommand = crossbuildcmd.Arg("tarballs", "Optionally pass the string \"tarballs\" from cross-built binaries").String()
+)
 
 func runCrossbuild() {
+	//Check required configuration
+	if len(strings.TrimSpace(config.Repository.Path)) == 0 {
+		log.Fatalf("missing required '%s' configuration", "repository.path")
+	}
+	if *tarballsSubcommand == "tarballs" {
+		runCrossbuildTarballs()
+		return
+	}
+
+	if crossBuildCgoFlagSet {
+		config.Go.CGo = *crossBuildCgoFlag
+	}
+	if goFlagSet {
+		config.Go.Version = *goFlag
+	}
+	if platformsFlagSet {
+		config.Crossbuild.Platforms = *platformsFlag
+	}
+
 	var (
 		mainPlatforms    []string
 		armPlatforms     []string
@@ -100,10 +110,10 @@ func runCrossbuild() {
 		s390xPlatforms   []string
 		unknownPlatforms []string
 
-		cgo       = viper.GetBool("go.cgo")
-		goVersion = viper.GetString("go.version")
-		repoPath  = viper.GetString("repository.path")
-		platforms = viper.GetStringSlice("crossbuild.platforms")
+		cgo       = config.Go.CGo
+		goVersion = config.Go.Version
+		repoPath  = config.Repository.Path
+		platforms = config.Crossbuild.Platforms
 
 		dockerBaseBuilderImage    = fmt.Sprintf("%s:%s-base", dockerBuilderImageName, goVersion)
 		dockerMainBuilderImage    = fmt.Sprintf("%s:%s-main", dockerBuilderImageName, goVersion)

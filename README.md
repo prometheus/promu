@@ -5,26 +5,43 @@
 ## Usage
 
 ```help
-promu is the utility tool for Prometheus projects
+usage: promu [<flags>] <command> [<args> ...]
 
-Usage:
-  promu [flags]
-  promu [command]
-
-Available Commands:
-  build       Build a Go project
-  crossbuild  Crossbuild a Go project using Golang builder Docker images
-  info        Print info about current project and exit
-  release     Upload tarballs to the Github release
-  tarball     Create a tarball from the built Go project
-  version     Print the version and exit
+promu is the utility tool for building and releasing Prometheus projects
 
 Flags:
-      --config string   Config file (default is ./.promu.yml)
-  -v, --verbose         Verbose output
-      --viper           Use Viper for configuration (default true)
+  -h, --help                 Show context-sensitive help (also try --help-long and --help-man).
+  -c, --config=".promu.yml"  Path to config file
+  -v, --verbose              Verbose output
 
-Use "promu [command] --help" for more information about a command.
+Commands:
+  help [<command>...]
+    Show help.
+
+  build [<flags>] [<binary-names>...]
+    Build a Go project
+
+  check licenses [<flags>] [<location>...]
+    Inspect source files for each file in a given directory
+
+  checksum [<location>...]
+    Calculate the SHA256 checksum for each file in the given location
+
+  crossbuild [<flags>] [<tarballs>]
+    Crossbuild a Go project using Golang builder Docker images
+
+  info
+    Print info about current project and exit
+
+  release [<flags>] [<location>...]
+    Upload all release files to the Github release
+
+  tarball [<flags>] [<location>...]
+    Create a tarball from the built Go project
+
+  version [<flags>]
+    Print the version and exit
+
 ```
 
 ## `.promu.yml` config file

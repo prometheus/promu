@@ -20,13 +20,14 @@ import (
 	"os/exec"
 	"regexp"
 	"strings"
-
-	"github.com/spf13/viper"
 )
+
+// Verbose enables verbose output
+var Verbose bool
 
 // RunCommand executes a shell command.
 func RunCommand(name string, arg ...string) error {
-	if viper.GetBool("verbose") {
+	if Verbose {
 		cmdText := name + " " + strings.Join(arg, " ")
 		fmt.Fprintln(os.Stderr, " + ", cmdText)
 	}

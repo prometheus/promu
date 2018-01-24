@@ -23,28 +23,16 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
 )
 
 const (
 	checksumsFilename = "sha256sums.txt"
 )
 
-// checksumCmd represents the command calculating checksums for all files in a
-// given directory and writing the result to a checksums file.
-var checksumCmd = &cobra.Command{
-	Use:   "checksum [<location>]",
-	Short: "Calculate the SHA256 checksum for each file in the given location",
-	Long:  `Calculate the SHA256 checksum for each file in the given location`,
-	Run: func(cmd *cobra.Command, args []string) {
-		runChecksum(optArg(args, 0, "."))
-	},
-}
-
-// init prepares cobra flags
-func init() {
-	Promu.AddCommand(checksumCmd)
-}
+var (
+	checksumcmd      = app.Command("checksum", "Calculate the SHA256 checksum for each file in the given location")
+	checksumLocation = checksumcmd.Arg("location", "Location to checksum").Default(".").Strings()
+)
 
 func runChecksum(path string) {
 	checksums, err := calculateSHA256s(path)
