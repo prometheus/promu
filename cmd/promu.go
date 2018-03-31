@@ -122,7 +122,7 @@ func setDefaultConfigValues() {
 		viper.Set("tarball.prefix", ".")
 	}
 	if !viper.IsSet("go.version") {
-		viper.Set("go.version", "1.10.0")
+		viper.Set("go.version", "1.10")
 	}
 	if !viper.IsSet("go.cgo") {
 		viper.Set("go.cgo", false)
