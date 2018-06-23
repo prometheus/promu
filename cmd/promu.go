@@ -89,7 +89,8 @@ func initConfig() error {
 	viper.SetConfigName(".promu") // name of config file (without extension)
 	viper.AddConfigPath(".")      // look for config in the working directory
 	viper.SetEnvPrefix("promu")
-	viper.AutomaticEnv() // read in environment variables that match
+	viper.AutomaticEnv()                                   // read in environment variables that match
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_")) // replacing dots in key names with '_'
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err != nil {
