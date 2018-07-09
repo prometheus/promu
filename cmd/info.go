@@ -81,7 +81,12 @@ func NewProjectInfo() (ProjectInfo, error) {
 			Revision: "non-git",
 		}
 	} else {
-		repo, err := repoLocation(shellOutput("git config --get remote.origin.url"))
+		cmd := exec.Command("git", "config", "--get", "remote.origin.url")
+		repoURL, err := cmd.Output()
+		if err != nil {
+			warn(errors.Wrap(err, "Unable to get repo location info from 'origin' remote"))
+		}
+		repo, err := repoLocation(strings.Trim(string(repoURL), " \n\r"))
 		if err != nil {
 			return projectInfo, errors.Wrapf(err, "Couldn't parse repo location")
 		}
