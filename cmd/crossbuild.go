@@ -42,6 +42,7 @@ var (
 		"linux/ppc64", "linux/ppc64le",
 	}
 	defaultMIPSPlatforms = []string{
+		"linux/mips", "linux/mipsle",
 		"linux/mips64", "linux/mips64le",
 	}
 	armPlatformsAliases = map[string][]string{
