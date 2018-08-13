@@ -178,6 +178,11 @@ func getLdflags(info ProjectInfo) string {
 		ldflags = append(ldflags, `-extldflags '-static'`)
 	}
 
+	// Workaround for https://github.com/golang/go/issues/13192.
+	if goarch == "ppc64" && !stringInSlice(`-linkmode=external`, ldflags) {
+		ldflags = append(ldflags, `-linkmode=external`)
+	}
+
 	return strings.Join(ldflags[:], " ")
 }
 
