@@ -111,6 +111,9 @@ func setDefaultConfigValues() {
 	if !viper.IsSet("build.prefix") {
 		viper.Set("build.prefix", ".")
 	}
+	if !viper.IsSet("build.static") {
+		viper.Set("build.static", true)
+	}
 	if !viper.IsSet("crossbuild.platforms") {
 		platforms := defaultMainPlatforms
 		platforms = append(platforms, defaultARMPlatforms...)
