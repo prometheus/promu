@@ -36,6 +36,20 @@ pkgs          = ./...
 PREFIX                  ?= $(shell pwd)
 BIN_DIR                 ?= $(shell pwd)
 DOCKER_IMAGE_TAG        ?= $(subst /,-,$(shell git rev-parse --abbrev-ref HEAD))
+GOHOSTARCH := $(shell $(GO) env GOHOSTARCH)
+
+ifeq ($(OS),Windows_NT)
+	OS_detected := Windows
+else
+	OS_detected := $(shell uname -s)
+endif
+
+ifeq ($(GOHOSTARCH),amd64)
+	ifeq ($(OS_detected),$(filter $(OS_detected),Linux FreeBSD Darwin Windows))
+		# Only supported on amd64
+		test-flags := -race
+	endif
+endif
 
 all: style staticcheck unused build test
 
@@ -59,7 +73,7 @@ test-short:
 
 test:
 	@echo ">> running all tests"
-	$(GO) test -race $(pkgs)
+	$(GO) test $(test-flags) $(pkgs)
 
 format:
 	@echo ">> formatting code"

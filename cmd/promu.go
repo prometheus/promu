@@ -119,6 +119,7 @@ func setDefaultConfigValues() {
 		platforms = append(platforms, defaultARMPlatforms...)
 		platforms = append(platforms, defaultPowerPCPlatforms...)
 		platforms = append(platforms, defaultMIPSPlatforms...)
+		platforms = append(platforms, defaultS390Platforms...)
 		viper.Set("crossbuild.platforms", platforms)
 	}
 	if !viper.IsSet("tarball.prefix") {
