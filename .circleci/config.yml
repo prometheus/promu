@@ -4,7 +4,7 @@ version: 2
 jobs:
   test:
     docker:
-    - image: circleci/golang:1.10
+    - image: circleci/golang:1.11
     working_directory: /go/src/github.com/prometheus/promu
 
     steps:
@@ -28,7 +28,7 @@ jobs:
 
   release_tags:
     docker:
-    - image: circleci/golang:1.10
+    - image: circleci/golang:1.11
     working_directory: /go/src/github.com/prometheus/promu
 
     steps:
