@@ -45,6 +45,9 @@ var (
 		"linux/mips", "linux/mipsle",
 		"linux/mips64", "linux/mips64le",
 	}
+	defaultS390Platforms = []string{
+		"linux/s390x",
+	}
 	armPlatformsAliases = map[string][]string{
 		"linux/arm":   {"linux/armv5", "linux/armv6", "linux/armv7"},
 		"freebsd/arm": {"freebsd/armv6", "freebsd/armv7"},
@@ -84,6 +87,7 @@ func init() {
 	// platforms = append(platforms, defaultARMPlatforms...)
 	// platforms = append(platforms, defaultPowerPCPlatforms...)
 	// platforms = append(platforms, defaultMIPSPlatforms...)
+	// platforms = append(platforms, defaultS390Platforms...)
 	// viper.SetDefault("crossbuild.platforms", platforms)
 }
 
@@ -93,6 +97,7 @@ func runCrossbuild() {
 		armPlatforms     []string
 		powerPCPlatforms []string
 		mipsPlatforms    []string
+		s390xPlatforms   []string
 		unknownPlatforms []string
 
 		cgo       = viper.GetBool("go.cgo")
@@ -105,6 +110,7 @@ func runCrossbuild() {
 		dockerARMBuilderImage     = fmt.Sprintf("%s:%s-arm", dockerBuilderImageName, goVersion)
 		dockerPowerPCBuilderImage = fmt.Sprintf("%s:%s-powerpc", dockerBuilderImageName, goVersion)
 		dockerMIPSBuilderImage    = fmt.Sprintf("%s:%s-mips", dockerBuilderImageName, goVersion)
+		dockerS390XBuilderImage   = fmt.Sprintf("%s:%s-s390x", dockerBuilderImageName, goVersion)
 	)
 
 	for _, platform := range platforms {
@@ -117,6 +123,8 @@ func runCrossbuild() {
 			powerPCPlatforms = append(powerPCPlatforms, platform)
 		case stringInSlice(platform, defaultMIPSPlatforms):
 			mipsPlatforms = append(mipsPlatforms, platform)
+		case stringInSlice(platform, defaultS390Platforms):
+			s390xPlatforms = append(s390xPlatforms, platform)
 		case stringInMapKeys(platform, armPlatformsAliases):
 			armPlatforms = append(armPlatforms, armPlatformsAliases[platform]...)
 		default:
@@ -135,6 +143,7 @@ func runCrossbuild() {
 		allPlatforms = append(allPlatforms, armPlatforms[:]...)
 		allPlatforms = append(allPlatforms, powerPCPlatforms[:]...)
 		allPlatforms = append(allPlatforms, mipsPlatforms[:]...)
+		allPlatforms = append(allPlatforms, s390xPlatforms[:]...)
 
 		pg := &platformGroup{"base", dockerBaseBuilderImage, allPlatforms}
 		if err := pg.Build(repoPath); err != nil {
@@ -146,6 +155,7 @@ func runCrossbuild() {
 			{"ARM", dockerARMBuilderImage, armPlatforms},
 			{"PowerPC", dockerPowerPCBuilderImage, powerPCPlatforms},
 			{"MIPS", dockerMIPSBuilderImage, mipsPlatforms},
+			{"s390x", dockerS390XBuilderImage, s390xPlatforms},
 		} {
 			if err := pg.Build(repoPath); err != nil {
 				fatal(errors.Wrapf(err, "The %s builder docker image exited unexpectedly", pg.Name))
