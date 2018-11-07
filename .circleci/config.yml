@@ -1,16 +1,25 @@
 ---
-version: 2
+version: 2.1
 
-jobs:
-  test:
+executors:
+  # Whenever the Go version is updated here, .travis.yml and .promu.yml
+  # should also be updated.
+  golang:
     docker:
     - image: circleci/golang:1.11
     working_directory: /go/src/github.com/prometheus/promu
+
+jobs:
+  test:
+    executor: golang
 
     steps:
     - checkout
     - run: make promu
     - run: make check_license style vet unused staticcheck build
+    - store_artifacts:
+        path: promu
+        destination: /build/promu
     - run: rm -v promu
 
   build:
@@ -25,6 +34,9 @@ jobs:
         root: .
         paths:
         - .build
+    - store_artifacts:
+        path: .build
+        destination: /build
 
   release_tags:
     docker:
@@ -36,6 +48,8 @@ jobs:
     - run: mkdir -v -p ${HOME}/bin
     - run: curl -L 'https://github.com/aktau/github-release/releases/download/v0.7.2/linux-amd64-github-release.tar.bz2' | tar xvjf - --strip-components 3 -C ${HOME}/bin
     - run: echo 'export PATH=${HOME}/bin:${PATH}' >> ${BASH_ENV}
+    - attach_workspace:
+        at: .
     - run: make promu
     - run: promu crossbuild tarballs
     - run: promu checksum .tarballs
