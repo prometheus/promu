@@ -21,17 +21,6 @@ var (
 	nodeType reflect.Type = findNodeType()
 )
 
-// Unmarshal accepts a byte slice as input and writes the
-// data to the value pointed to by v.
-func Unmarshal(bs []byte, v interface{}) error {
-	root, err := parse(bs)
-	if err != nil {
-		return err
-	}
-
-	return DecodeObject(v, root)
-}
-
 // Decode reads the given input and decodes it into the structure
 // given by `out`.
 func Decode(out interface{}, in string) error {
@@ -89,9 +78,9 @@ func (d *decoder) decode(name string, node ast.Node, result reflect.Value) error
 	switch k.Kind() {
 	case reflect.Bool:
 		return d.decodeBool(name, node, result)
-	case reflect.Float32, reflect.Float64:
+	case reflect.Float64:
 		return d.decodeFloat(name, node, result)
-	case reflect.Int, reflect.Int32, reflect.Int64:
+	case reflect.Int:
 		return d.decodeInt(name, node, result)
 	case reflect.Interface:
 		// When we see an interface, we make our own thing
@@ -117,17 +106,10 @@ func (d *decoder) decode(name string, node ast.Node, result reflect.Value) error
 func (d *decoder) decodeBool(name string, node ast.Node, result reflect.Value) error {
 	switch n := node.(type) {
 	case *ast.LiteralType:
-		switch n.Token.Type {
-		case token.BOOL, token.STRING, token.NUMBER:
-			var v bool
-			s := strings.ToLower(strings.Replace(n.Token.Text, "\"", "", -1))
-			switch s {
-			case "1", "true":
-				v = true
-			case "0", "false":
-				v = false
-			default:
-				return fmt.Errorf("decodeBool: Unknown value for boolean: %s", n.Token.Text)
+		if n.Token.Type == token.BOOL {
+			v, err := strconv.ParseBool(n.Token.Text)
+			if err != nil {
+				return err
 			}
 
 			result.Set(reflect.ValueOf(v))
@@ -144,13 +126,13 @@ func (d *decoder) decodeBool(name string, node ast.Node, result reflect.Value) e
 func (d *decoder) decodeFloat(name string, node ast.Node, result reflect.Value) error {
 	switch n := node.(type) {
 	case *ast.LiteralType:
-		if n.Token.Type == token.FLOAT || n.Token.Type == token.NUMBER {
+		if n.Token.Type == token.FLOAT {
 			v, err := strconv.ParseFloat(n.Token.Text, 64)
 			if err != nil {
 				return err
 			}
 
-			result.Set(reflect.ValueOf(v).Convert(result.Type()))
+			result.Set(reflect.ValueOf(v))
 			return nil
 		}
 	}
@@ -171,11 +153,7 @@ func (d *decoder) decodeInt(name string, node ast.Node, result reflect.Value) er
 				return err
 			}
 
-			if result.Kind() == reflect.Interface {
-				result.Set(reflect.ValueOf(int(v)))
-			} else {
-				result.SetInt(v)
-			}
+			result.Set(reflect.ValueOf(int(v)))
 			return nil
 		case token.STRING:
 			v, err := strconv.ParseInt(n.Token.Value().(string), 0, 0)
@@ -183,11 +161,7 @@ func (d *decoder) decodeInt(name string, node ast.Node, result reflect.Value) er
 				return err
 			}
 
-			if result.Kind() == reflect.Interface {
-				result.Set(reflect.ValueOf(int(v)))
-			} else {
-				result.SetInt(v)
-			}
+			result.Set(reflect.ValueOf(int(v)))
 			return nil
 		}
 	}
@@ -352,14 +326,6 @@ func (d *decoder) decodeMap(name string, node ast.Node, result reflect.Value) er
 			continue
 		}
 
-		// github.com/hashicorp/terraform/issue/5740
-		if len(item.Keys) == 0 {
-			return &parser.PosError{
-				Pos: node.Pos(),
-				Err: fmt.Errorf("%s: map must have string keys", name),
-			}
-		}
-
 		// Get the key we're dealing with, which is the first item
 		keyStr := item.Keys[0].Token.Value().(string)
 
@@ -424,6 +390,7 @@ func (d *decoder) decodeSlice(name string, node ast.Node, result reflect.Value) 
 	if result.Kind() == reflect.Interface {
 		result = result.Elem()
 	}
+
 	// Create the slice if it isn't nil
 	resultType := result.Type()
 	resultElemType := resultType.Elem()
@@ -457,12 +424,6 @@ func (d *decoder) decodeSlice(name string, node ast.Node, result reflect.Value) 
 
 		// Decode
 		val := reflect.Indirect(reflect.New(resultElemType))
-
-		// if item is an object that was decoded from ambiguous JSON and
-		// flattened, make sure it's expanded if it needs to decode into a
-		// defined structure.
-		item := expandObject(item, val)
-
 		if err := d.decode(fieldName, item, val); err != nil {
 			return err
 		}
@@ -473,57 +434,6 @@ func (d *decoder) decodeSlice(name string, node ast.Node, result reflect.Value) 
 
 	set.Set(result)
 	return nil
-}
-
-// expandObject detects if an ambiguous JSON object was flattened to a List which
-// should be decoded into a struct, and expands the ast to properly deocode.
-func expandObject(node ast.Node, result reflect.Value) ast.Node {
-	item, ok := node.(*ast.ObjectItem)
-	if !ok {
-		return node
-	}
-
-	elemType := result.Type()
-
-	// our target type must be a struct
-	switch elemType.Kind() {
-	case reflect.Ptr:
-		switch elemType.Elem().Kind() {
-		case reflect.Struct:
-			//OK
-		default:
-			return node
-		}
-	case reflect.Struct:
-		//OK
-	default:
-		return node
-	}
-
-	// A list value will have a key and field name. If it had more fields,
-	// it wouldn't have been flattened.
-	if len(item.Keys) != 2 {
-		return node
-	}
-
-	keyToken := item.Keys[0].Token
-	item.Keys = item.Keys[1:]
-
-	// we need to un-flatten the ast enough to decode
-	newNode := &ast.ObjectItem{
-		Keys: []*ast.ObjectKey{
-			&ast.ObjectKey{
-				Token: keyToken,
-			},
-		},
-		Val: &ast.ObjectType{
-			List: &ast.ObjectList{
-				Items: []*ast.ObjectItem{item},
-			},
-		},
-	}
-
-	return newNode
 }
 
 func (d *decoder) decodeString(name string, node ast.Node, result reflect.Value) error {
@@ -556,14 +466,6 @@ func (d *decoder) decodeStruct(name string, node ast.Node, result reflect.Value)
 		node = ot.List
 	}
 
-	// Handle the special case where the object itself is a literal. Previously
-	// the yacc parser would always ensure top-level elements were arrays. The new
-	// parser does not make the same guarantees, thus we need to convert any
-	// top-level literal elements into a list.
-	if _, ok := node.(*ast.LiteralType); ok && item != nil {
-		node = &ast.ObjectList{Items: []*ast.ObjectItem{item}}
-	}
-
 	list, ok := node.(*ast.ObjectList)
 	if !ok {
 		return &parser.PosError{
@@ -580,11 +482,7 @@ func (d *decoder) decodeStruct(name string, node ast.Node, result reflect.Value)
 
 	// Compile the list of all the fields that we're going to be decoding
 	// from all the structs.
-	type field struct {
-		field reflect.StructField
-		val   reflect.Value
-	}
-	fields := []field{}
+	fields := make(map[*reflect.StructField]reflect.Value)
 	for len(structs) > 0 {
 		structVal := structs[0]
 		structs = structs[1:]
@@ -592,12 +490,6 @@ func (d *decoder) decodeStruct(name string, node ast.Node, result reflect.Value)
 		structType := structVal.Type()
 		for i := 0; i < structType.NumField(); i++ {
 			fieldType := structType.Field(i)
-			tagParts := strings.Split(fieldType.Tag.Get(tagName), ",")
-
-			// Ignore fields with tag name "-"
-			if tagParts[0] == "-" {
-				continue
-			}
 
 			if fieldType.Anonymous {
 				fieldKind := fieldType.Type.Kind()
@@ -612,6 +504,7 @@ func (d *decoder) decodeStruct(name string, node ast.Node, result reflect.Value)
 				// We have an embedded field. We "squash" the fields down
 				// if specified in the tag.
 				squash := false
+				tagParts := strings.Split(fieldType.Tag.Get(tagName), ",")
 				for _, tag := range tagParts[1:] {
 					if tag == "squash" {
 						squash = true
@@ -627,7 +520,7 @@ func (d *decoder) decodeStruct(name string, node ast.Node, result reflect.Value)
 			}
 
 			// Normal struct field, store it away
-			fields = append(fields, field{fieldType, structVal.Field(i)})
+			fields[&fieldType] = structVal.Field(i)
 		}
 	}
 
@@ -635,27 +528,26 @@ func (d *decoder) decodeStruct(name string, node ast.Node, result reflect.Value)
 	decodedFields := make([]string, 0, len(fields))
 	decodedFieldsVal := make([]reflect.Value, 0)
 	unusedKeysVal := make([]reflect.Value, 0)
-	for _, f := range fields {
-		field, fieldValue := f.field, f.val
-		if !fieldValue.IsValid() {
+	for fieldType, field := range fields {
+		if !field.IsValid() {
 			// This should never happen
 			panic("field is not valid")
 		}
 
 		// If we can't set the field, then it is unexported or something,
 		// and we just continue onwards.
-		if !fieldValue.CanSet() {
+		if !field.CanSet() {
 			continue
 		}
 
-		fieldName := field.Name
+		fieldName := fieldType.Name
 
-		tagValue := field.Tag.Get(tagName)
+		tagValue := fieldType.Tag.Get(tagName)
 		tagParts := strings.SplitN(tagValue, ",", 2)
 		if len(tagParts) >= 2 {
 			switch tagParts[1] {
 			case "decodedFields":
-				decodedFieldsVal = append(decodedFieldsVal, fieldValue)
+				decodedFieldsVal = append(decodedFieldsVal, field)
 				continue
 			case "key":
 				if item == nil {
@@ -666,10 +558,10 @@ func (d *decoder) decodeStruct(name string, node ast.Node, result reflect.Value)
 					}
 				}
 
-				fieldValue.SetString(item.Keys[0].Token.Value().(string))
+				field.SetString(item.Keys[0].Token.Value().(string))
 				continue
 			case "unusedKeys":
-				unusedKeysVal = append(unusedKeysVal, fieldValue)
+				unusedKeysVal = append(unusedKeysVal, field)
 				continue
 			}
 		}
@@ -682,7 +574,6 @@ func (d *decoder) decodeStruct(name string, node ast.Node, result reflect.Value)
 		// match (only object with the field), then we decode it exactly.
 		// If it is a prefix match, then we decode the matches.
 		filter := list.Filter(fieldName)
-
 		prefixMatches := filter.Children()
 		matches := filter.Elem()
 		if len(matches.Items) == 0 && len(prefixMatches.Items) == 0 {
@@ -696,7 +587,7 @@ func (d *decoder) decodeStruct(name string, node ast.Node, result reflect.Value)
 		// because we actually want the value.
 		fieldName = fmt.Sprintf("%s.%s", name, fieldName)
 		if len(prefixMatches.Items) > 0 {
-			if err := d.decode(fieldName, prefixMatches, fieldValue); err != nil {
+			if err := d.decode(fieldName, prefixMatches, field); err != nil {
 				return err
 			}
 		}
@@ -706,12 +597,12 @@ func (d *decoder) decodeStruct(name string, node ast.Node, result reflect.Value)
 				decodeNode = &ast.ObjectList{Items: ot.List.Items}
 			}
 
-			if err := d.decode(fieldName, decodeNode, fieldValue); err != nil {
+			if err := d.decode(fieldName, decodeNode, field); err != nil {
 				return err
 			}
 		}
 
-		decodedFields = append(decodedFields, field.Name)
+		decodedFields = append(decodedFields, fieldType.Name)
 	}
 
 	if len(decodedFieldsVal) > 0 {

@@ -22,21 +22,52 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
 )
 
 var (
+	// validSourceExtensions is a slice of strings
+	// representing the file suffix of source code files to inspect.
+	validSourceExtensions []string
+
+	// headerLength is the number of lines to read in.
+	headerLength int
+
+	// defaultSourceExtensions is a slice of strings
+	// representing the file suffix of source code files to inspect
+	// defaulted to only include go source files.
+	defaultSourceExtensions = []string{".go"}
+
 	// validHeaderStrings is a slice of strings that must exist in a header.
 	validHeaderStrings = []string{"copyright", "generated"}
 
-	checkcmd         = app.Command("check", "Check the resources for validity")
-	checkLicensescmd = checkcmd.Command("licenses", "Inspect source files for each file in a given directory")
-	sourceExtensions = checkLicensescmd.Flag("extensions", "Comma separated list of valid source code extenstions (default is .go)").
-				Default(".go").Strings()
-	headerLength = checkLicensescmd.Flag("length", "The number of lines to read from the head of the file").
-			Short('n').Default("10").Int()
-	checkLicLocation = checkLicensescmd.Arg("location", "Directory path to check licenses").
-				Default(".").Strings()
+	// checkLicensesCmd represents the check_licenses command.
+	checkCmd = &cobra.Command{
+		Use:   "check",
+		Short: "Check the resources for validity",
+		Long:  `Check the resources for validity`,
+	}
+
+	checkLicensesCmd = &cobra.Command{
+		Use:   "licenses [<location>]",
+		Short: "Inspect source files for each file in a given directory",
+		Long: `Inspect source files for each file in a given directory 
+and report those that are missing their header`,
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Println(validSourceExtensions)
+			runCheckLicenses(optArg(args, 0, "."), headerLength, validSourceExtensions)
+		},
+	}
 )
+
+// init prepares cobra flags and attaches the checkLicensesCmd to Promu
+func init() {
+	checkLicensesCmd.PersistentFlags().StringSliceVar(&validSourceExtensions, "extensions", defaultSourceExtensions, "comma separated list of valid source code extenstions (default is .go)")
+	checkLicensesCmd.PersistentFlags().IntVarP(&headerLength, "length", "n", 10, "The number of lines to read from the head of the file")
+
+	checkCmd.AddCommand(checkLicensesCmd)
+	Promu.AddCommand(checkCmd)
+}
 
 func runCheckLicenses(path string, n int, extensions []string) {
 	path = fmt.Sprintf("%s%c", filepath.Clean(path), filepath.Separator)
