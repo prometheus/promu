@@ -18,32 +18,15 @@ import (
 	"fmt"
 
 	"github.com/prometheus/common/version"
-	"github.com/spf13/cobra"
 )
 
 var (
-	short bool
+	versioncmd = app.Command("version", "Print the version and exit")
+	short      = versioncmd.Flag("short", "Print shorter version").Short('s').Bool()
 )
 
-// versionCmd represents the version command
-var versionCmd = &cobra.Command{
-	Use:   "version",
-	Short: "Print the version and exit",
-	Long:  `Print the version of promu, and various build and configuration information.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		runVersion()
-	},
-}
-
-// init prepares cobra flags
-func init() {
-	Promu.AddCommand(versionCmd)
-
-	versionCmd.Flags().BoolVarP(&short, "short", "s", false, "Print shorter version")
-}
-
 func runVersion() {
-	if short {
+	if *short {
 		fmt.Printf(version.Version)
 	} else {
 		fmt.Println(version.Print("promu"))

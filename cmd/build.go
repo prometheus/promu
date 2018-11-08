@@ -19,40 +19,37 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	kingpin "gopkg.in/alecthomas/kingpin.v2"
 
 	"github.com/prometheus/promu/util/sh"
 )
 
-// buildCmd represents the build command
-var buildCmd = &cobra.Command{
-	Use:   "build [<binary-names>]",
-	Short: "Build a Go project",
-	Long:  `Build a Go project`,
-	Run: func(cmd *cobra.Command, args []string) {
-		runBuild(optArg(args, 0, "all"))
-	},
-	PreRunE: func(cmd *cobra.Command, args []string) error {
-		return hasRequiredConfigurations("repository.path")
-	},
-}
-
-// init prepares cobra flags
-func init() {
-	Promu.AddCommand(buildCmd)
-
-	buildCmd.Flags().Bool("cgo", false, "Enable CGO")
-	buildCmd.Flags().String("prefix", "", "Specific dir to store binaries (default is .)")
-
-	viper.BindPFlag("build.prefix", buildCmd.Flags().Lookup("prefix"))
-	viper.BindPFlag("go.cgo", buildCmd.Flags().Lookup("cgo"))
-}
+var (
+	buildcmd = app.Command("build", "Build a Go project").
+			Action(func(c *kingpin.ParseContext) error {
+			return hasRequiredConfigurations("repository.path")
+		})
+	buildCgoFlagSet bool
+	buildCgoFlag    = buildcmd.Flag("cgo", "Enable CGO").
+			PreAction(func(c *kingpin.ParseContext) error {
+			buildCgoFlagSet = true
+			return nil
+		}).Bool()
+	prefixFlagSet bool
+	prefixFlag    = buildcmd.Flag("prefix", "Specific dir to store binaries (default is .)").
+			PreAction(func(c *kingpin.ParseContext) error {
+			prefixFlagSet = true
+			return nil
+		}).String()
+	binaries = buildcmd.Arg("binary-names", "List of binaries to build").Default("all").Strings()
+)
 
 // Binary represents a built binary.
 type Binary struct {
@@ -103,7 +100,19 @@ func buildAll(ext string, prefix string, ldflags string, binaries []Binary) {
 	}
 }
 
+func bindViperBuildFlags() {
+	if prefixFlagSet {
+		viperPrefixFlag := ViperFlagValue{"prefix", *prefixFlag, "string", true}
+		viper.BindFlagValue("build.prefix", viperPrefixFlag)
+	}
+	if buildCgoFlagSet {
+		viperCgoFlag := ViperFlagValue{"cgo", strconv.FormatBool(*buildCgoFlag), "bool", true}
+		viper.BindFlagValue("go.cgo", viperCgoFlag)
+	}
+}
+
 func runBuild(binariesString string) {
+	bindViperBuildFlags()
 	var (
 		cgo    = viper.GetBool("go.cgo")
 		prefix = viper.GetString("build.prefix")

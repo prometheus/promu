@@ -20,33 +20,35 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	kingpin "gopkg.in/alecthomas/kingpin.v2"
 
 	"github.com/prometheus/promu/util/sh"
 )
 
-// tarballCmd represents the tarball command
-var tarballCmd = &cobra.Command{
-	Use:   "tarball [<binaries-location>]",
-	Short: "Create a tarball from the builded Go project",
-	Long:  `Create a tarball from the builded Go project`,
-	Run: func(cmd *cobra.Command, args []string) {
-		binariesLocation := optArg(args, 0, ".")
-		runTarball(binariesLocation)
-	},
-}
+var (
+	tarballcmd = app.Command("tarball", "Create a tarball from the built Go project")
 
-// init prepares cobra flags
-func init() {
-	Promu.AddCommand(tarballCmd)
+	tarballPrefixSet bool
+	tarballPrefix    = tarballcmd.Flag("prefix", "Specific dir to store tarballs").
+				PreAction(func(c *kingpin.ParseContext) error {
+			tarballPrefixSet = true
+			return nil
+		}).
+		Default(".").String()
 
-	tarballCmd.Flags().String("prefix", "", "Specific dir to store tarballs (default is .)")
+	tarBinariesLocation = tarballcmd.Arg("location", "location of binaries to tar").Default(".").Strings()
+)
 
-	viper.BindPFlag("tarball.prefix", tarballCmd.Flags().Lookup("prefix"))
+func bindViperTarballFlags() {
+	if tarballPrefixSet {
+		viperTarballPrefixFlag := ViperFlagValue{"prefix", *tarballPrefix, "string", true}
+		viper.BindFlagValue("tarball.prefix", viperTarballPrefixFlag)
+	}
 }
 
 func runTarball(binariesLocation string) {
+	bindViperTarballFlags()
 	var (
 		prefix = viper.GetString("tarball.prefix")
 		tmpDir = ".release"

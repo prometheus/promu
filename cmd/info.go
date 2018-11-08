@@ -25,23 +25,9 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
 )
 
-// infoCmd represents the info command
-var infoCmd = &cobra.Command{
-	Use:   "info",
-	Short: "Print info about current project and exit",
-	Long:  `Print info about current project and exit`,
-	Run: func(cmd *cobra.Command, args []string) {
-		runInfo()
-	},
-}
-
-// init prepares cobra flags
-func init() {
-	Promu.AddCommand(infoCmd)
-}
+var infocmd = app.Command("info", "Print info about current project and exit")
 
 // ProjectInfo represents current project useful informations.
 type ProjectInfo struct {

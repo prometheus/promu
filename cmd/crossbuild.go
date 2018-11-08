@@ -17,11 +17,12 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	kingpin "gopkg.in/alecthomas/kingpin.v2"
 
 	"github.com/prometheus/promu/util/sh"
 )
@@ -56,30 +57,48 @@ var (
 	}
 )
 
-// crossbuildCmd represents the crossbuild command
-var crossbuildCmd = &cobra.Command{
-	Use:   "crossbuild",
-	Short: "Crossbuild a Go project using Golang builder Docker images",
-	Long:  `Crossbuild a Go project using Golang builder Docker images`,
-	Run: func(cmd *cobra.Command, args []string) {
-		runCrossbuild()
-	},
-	PreRunE: func(cmd *cobra.Command, args []string) error {
-		return hasRequiredConfigurations("repository.path")
-	},
-}
+var (
+	crossbuildcmd = app.Command("crossbuild", "Crossbuild a Go project using Golang builder Docker images").
+			Action(func(c *kingpin.ParseContext) error {
+			return hasRequiredConfigurations("repository.path")
+		})
+	crossBuildCgoFlagSet bool
+	crossBuildCgoFlag    = crossbuildcmd.Flag("cgo", "Enable CGO using several docker images with different crossbuild toolchains.").
+				PreAction(func(c *kingpin.ParseContext) error {
+			crossBuildCgoFlagSet = true
+			return nil
+		}).Default("false").Bool()
+	goFlagSet bool
+	goFlag    = crossbuildcmd.Flag("go", "Golang builder version to use").
+			PreAction(func(c *kingpin.ParseContext) error {
+			goFlagSet = true
+			return nil
+		}).String()
+	platformsFlagSet bool
+	platformsFlag    = crossbuildcmd.Flag("platforms", "Platforms to build").Short('p').
+				PreAction(func(c *kingpin.ParseContext) error {
+			platformsFlagSet = true
+			return nil
+		}).String()
+	// kingpin doesn't currently support using the crossbuild command and the
+	// crossbuild tarball subcommand at the same time, so we treat the
+	// tarball subcommand as an optional arg
+	tarballsSubcommand = crossbuildcmd.Arg("tarballs", "Optionally pass the string \"tarballs\" from cross-built binaries").String()
+)
 
-// init prepares cobra flags
-func init() {
-	Promu.AddCommand(crossbuildCmd)
-
-	crossbuildCmd.Flags().Bool("cgo", false, "Enable CGO using several docker images with different crossbuild toolchains.")
-	crossbuildCmd.Flags().String("go", "", "Golang builder version to use")
-	crossbuildCmd.Flags().StringP("platforms", "p", "", "Platforms to build")
-
-	viper.BindPFlag("crossbuild.platforms", crossbuildCmd.Flags().Lookup("platforms"))
-	viper.BindPFlag("go.cgo", crossbuildCmd.Flags().Lookup("cgo"))
-	viper.BindPFlag("go.version", crossbuildCmd.Flags().Lookup("go"))
+func bindViperCrossBuildFlags() {
+	if crossBuildCgoFlagSet {
+		viperCrossBuildCgoFlag := ViperFlagValue{"cgo", strconv.FormatBool(*crossBuildCgoFlag), "string", true}
+		viper.BindFlagValue("go.cgo", viperCrossBuildCgoFlag)
+	}
+	if goFlagSet {
+		viperGoFlag := ViperFlagValue{"go", *goFlag, "string", true}
+		viper.BindFlagValue("go.version", viperGoFlag)
+	}
+	if platformsFlagSet {
+		viperPlatformsFlag := ViperFlagValue{"platforms", *platformsFlag, "string", true}
+		viper.BindFlagValue("crossbuild.platforms", viperPlatformsFlag)
+	}
 
 	// Current bug in viper: SeDefault doesn't work with nested key
 	// viper.SetDefault("go.version", "1.11")
@@ -92,6 +111,11 @@ func init() {
 }
 
 func runCrossbuild() {
+	if *tarballsSubcommand == "tarballs" {
+		runCrossbuildTarballs()
+		return
+	}
+
 	var (
 		mainPlatforms    []string
 		armPlatforms     []string
