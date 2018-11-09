@@ -24,29 +24,9 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
-
-// ViperFlagValue defines a flag wrapper for Viper integration
-type ViperFlagValue struct {
-	name        string
-	valueString string
-	typeString  string
-	changed     bool
-}
-
-// Name of the flag
-func (f ViperFlagValue) Name() string { return f.name }
-
-// ValueString the value of the flag in string form
-func (f ViperFlagValue) ValueString() string { return f.valueString }
-
-// ValueType the type (int, bool, etc) of the flag in string form
-func (f ViperFlagValue) ValueType() string { return f.typeString }
-
-// HasChanged whether the flag was set on the CLI
-func (f ViperFlagValue) HasChanged() bool { return f.changed }
 
 var (
 	buildContext = build.Default
@@ -57,55 +37,44 @@ var (
 	info     ProjectInfo
 	useViper bool
 	verbose  bool
-
-	// app represents the base command
-	app = kingpin.New("promu", "promu is the utility tool for Prometheus projects").
-		Action(func(ctx *kingpin.ParseContext) error {
-			var err error
-			info, err = NewProjectInfo()
-			if err != nil {
-				return err
-			}
-			return initConfig()
-		})
 )
 
-// init prepares flags
-func init() {
-	app.HelpFlag.Short('h')
-
-	// verbose, config, and viper flags cannot be initialized in var section because
-	// the app PreAction is dependent on them, and it would create an init loop
-	app.Flag("verbose", "Verbose output").Short('v').
-		PreAction(func(c *kingpin.ParseContext) error {
-			viper.BindFlagValue("verbose", ViperFlagValue{"verbose", "true", "bool", true})
-			return nil
-		}).BoolVar(&verbose)
-	app.Flag("config", "Path to config file").StringVar(&cfgFile)
-	app.Flag("viper", "Use Viper for configuration (default true)").Default("true").BoolVar(&useViper)
+// Promu represents the base command when called without any subcommands
+var Promu = &cobra.Command{
+	Use:           "promu",
+	Short:         "promu is the utility tool for Prometheus projects",
+	Long:          `promu is the utility tool for Prometheus projects`,
+	SilenceErrors: true,
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		var err error
+		info, err = NewProjectInfo()
+		if err != nil {
+			return err
+		}
+		return initConfig()
+	},
+	Run: func(cmd *cobra.Command, args []string) {
+		cmd.Help()
+	},
 }
 
 // Execute adds all child commands to the root command sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	switch kingpin.MustParse(app.Parse(os.Args[1:])) {
-	case buildcmd.FullCommand():
-		runBuild(optArg(*binaries, 0, "all"))
-	case checkLicensescmd.FullCommand():
-		runCheckLicenses(optArg(*checkLicLocation, 0, "."), *headerLength, *sourceExtensions)
-	case checksumcmd.FullCommand():
-		runChecksum(optArg(*checksumLocation, 0, "."))
-	case crossbuildcmd.FullCommand():
-		runCrossbuild()
-	case infocmd.FullCommand():
-		runInfo()
-	case releasecmd.FullCommand():
-		runRelease(optArg(*releaseLocation, 0, "."))
-	case tarballcmd.FullCommand():
-		runTarball(optArg(*tarBinariesLocation, 0, "."))
-	case versioncmd.FullCommand():
-		runVersion()
+	if err := Promu.Execute(); err != nil {
+		printErr(err)
+		os.Exit(2)
 	}
+}
+
+// init prepares cobra flags
+func init() {
+	Promu.PersistentFlags().StringVar(&cfgFile, "config", "", "Config file (default is ./.promu.yml)")
+	Promu.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Verbose output")
+	Promu.PersistentFlags().BoolVar(&useViper, "viper", true, "Use Viper for configuration")
+
+	viper.BindPFlag("useViper", Promu.PersistentFlags().Lookup("viper"))
+	viper.BindPFlag("verbose", Promu.PersistentFlags().Lookup("verbose"))
 }
 
 // initConfig reads in config file and ENV variables if set.
