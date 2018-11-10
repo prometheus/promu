@@ -1,3 +1,4 @@
 /promu
-/.build
-/.tarballs
+.build
+.tarballs
+testoutput

@@ -1,0 +1,6 @@
+repository:
+    path: github.com/prometheus/promu
+build:
+    binaries:
+        - name: basic-example
+          path: examples/basic

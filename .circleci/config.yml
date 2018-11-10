@@ -16,7 +16,7 @@ jobs:
     steps:
     - checkout
     - run: make promu
-    - run: make check_license style vet unused staticcheck build
+    - run: make check_license style vet unused staticcheck test build
     - store_artifacts:
         path: promu
         destination: /build/promu

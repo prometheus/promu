@@ -1,0 +1,9 @@
+repository:
+    path: github.com/prometheus/promu
+build:
+    binaries:
+        - name: tarball-example
+          path: examples/tarball
+tarball:
+    files:
+        - README.md
