@@ -1,0 +1,13 @@
+repository:
+    path: github.com/prometheus/promu
+build:
+    binaries:
+        - name: crossbuild-example
+          path: examples/crossbuild
+crossbuild:
+    platforms:
+        - linux/amd64
+        - linux/386
+tarball:
+    files:
+        - README.md
