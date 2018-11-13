@@ -16,7 +16,7 @@ jobs:
     steps:
     - checkout
     - run: make promu
-    - run: make check_license style vet unused staticcheck test build
+    - run: make check_license style vet unused staticcheck test-short build
     - store_artifacts:
         path: promu
         destination: /build/promu
@@ -28,7 +28,7 @@ jobs:
 
     steps:
     - checkout
-    - run: make promu
+    - run: make promu test
     - run: promu crossbuild -v
     - persist_to_workspace:
         root: .
