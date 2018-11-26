@@ -7,7 +7,6 @@ executors:
   golang:
     docker:
     - image: circleci/golang:1.11
-    working_directory: /go/src/github.com/prometheus/promu
 
 jobs:
   test:
@@ -21,6 +20,7 @@ jobs:
         path: promu
         destination: /build/promu
     - run: rm -v promu
+    - run: git diff --exit-code
 
   build:
     machine: true
@@ -39,9 +39,7 @@ jobs:
         destination: /build
 
   release_tags:
-    docker:
-    - image: circleci/golang:1.11
-    working_directory: /go/src/github.com/prometheus/promu
+    executor: golang
 
     steps:
     - checkout
