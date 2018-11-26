@@ -15,7 +15,7 @@ include Makefile.common
 
 all: check_license format style vet staticcheck unused test build
 
-$(FIRST_GOPATH)/bin/promu promu:
-	GOOS= GOARCH= $(GO) install github.com/prometheus/promu
+$(FIRST_GOPATH)/bin/promu:
+	GO111MODULE=$(GO111MODULE) GOOS= GOARCH= $(GO) install github.com/prometheus/promu
 
 .PHONY: $(FIRST_GOPATH)/bin/promu
