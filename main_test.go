@@ -45,8 +45,8 @@ var (
 
 func TestMain(m *testing.M) {
 	setup()
-	m.Run()
-	os.Exit(0)
+	result := m.Run()
+	os.Exit(result)
 }
 
 // setup any prerequisites for the tests
@@ -81,6 +81,12 @@ func createSymlink(t *testing.T, target, newlink string) {
 		err = os.Symlink(target, newlink)
 		errcheck(t, err, "Unable to create symlink "+newlink)
 	}
+}
+
+func dockerAvailable() bool {
+	cmd := exec.Command("docker", "info")
+	err := cmd.Run()
+	return err == nil
 }
 
 func TestPromuInfo(t *testing.T) {
@@ -145,7 +151,13 @@ func TestTarball(t *testing.T) {
 }
 
 func TestPromuCrossbuild(t *testing.T) {
-	defer os.RemoveAll(path.Join(promuExamplesCrossbuild, ".tarballs"))
+	if testing.Short() {
+		t.Skip("skipping crossbuild test in short mode.")
+	}
+	if !dockerAvailable() {
+		t.Error("unable to connect to docker daemon.")
+		return
+	}
 
 	cmd := exec.Command(promuBinaryAbsPath, "crossbuild")
 	cmd.Dir = promuExamplesCrossbuild
@@ -156,6 +168,7 @@ func TestPromuCrossbuild(t *testing.T) {
 
 	cmd = exec.Command(promuBinaryAbsPath, "crossbuild", "tarballs")
 	cmd.Dir = promuExamplesCrossbuild
+	defer os.RemoveAll(path.Join(promuExamplesCrossbuild, ".tarballs"))
 	output, err = cmd.CombinedOutput()
 	errcheck(t, err, string(output))
 	assertFileExists(t, path.Join(promuExamplesCrossbuild, ".tarballs", "promu-0.1.linux-386.tar.gz"))

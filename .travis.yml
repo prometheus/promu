@@ -9,4 +9,4 @@ go:
 go_import_path: github.com/prometheus/promu
 
 script:
-- make check_license style vet staticcheck unused test
+- make check_license style vet staticcheck unused test-short
