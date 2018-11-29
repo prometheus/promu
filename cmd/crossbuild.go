@@ -218,7 +218,7 @@ func (pg platformGroup) Build(repoPath string) error {
 	}
 
 	err = sh.RunCommand("docker", "cp", "-a",
-		ctrName+":/app/.build",
+		ctrName+":/app/.build/.",
 		cwd+"/.build")
 	if err != nil {
 		return err
