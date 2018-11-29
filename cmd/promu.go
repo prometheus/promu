@@ -23,123 +23,142 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
+	"github.com/prometheus/promu/util/sh"
+	kingpin "gopkg.in/alecthomas/kingpin.v2"
+	yaml "gopkg.in/yaml.v2"
 )
+
+const (
+	// DefaultConfigFilename contains the default filename of the promu config file
+	DefaultConfigFilename = ".promu.yml"
+)
+
+// Binary represents a built binary.
+type Binary struct {
+	Name string
+	Path string
+}
+
+// Config contains the Promu Command Configuration
+type Config struct {
+	Build struct {
+		Binaries []Binary
+		Flags    string
+		LDFlags  string
+		Prefix   string
+		Static   bool
+	}
+	Crossbuild struct {
+		Platforms []string
+	}
+	Repository struct {
+		Path string
+	}
+	Go struct {
+		CGo     bool
+		Version string
+	}
+	Tarball struct {
+		Files  []string
+		Prefix string
+	}
+}
+
+// NewConfig creates a Config initialized with default values
+// some values may be overridden by CLI args
+func NewConfig() *Config {
+	config := &Config{}
+	config.Build.Binaries = []Binary{{Name: projInfo.Name, Path: "."}}
+	config.Build.Prefix = "."
+	config.Build.Static = true
+	platforms := defaultMainPlatforms
+	platforms = append(platforms, defaultARMPlatforms...)
+	platforms = append(platforms, defaultPowerPCPlatforms...)
+	platforms = append(platforms, defaultMIPSPlatforms...)
+	platforms = append(platforms, defaultS390Platforms...)
+	config.Crossbuild.Platforms = platforms
+	config.Tarball.Prefix = "."
+	config.Go.Version = "1.11"
+	config.Go.CGo = false
+	config.Repository.Path = projInfo.Repo
+
+	return config
+}
 
 var (
 	buildContext = build.Default
 	goos         = buildContext.GOOS
 	goarch       = buildContext.GOARCH
 
-	cfgFile  string
-	info     ProjectInfo
-	useViper bool
-	verbose  bool
+	configFile = app.Flag("config", "Path to config file").Short('c').
+			Default(DefaultConfigFilename).String()
+	verbose  = app.Flag("verbose", "Verbose output").Short('v').Bool()
+	config   *Config
+	projInfo ProjectInfo
+
+	// app represents the base command
+	app = kingpin.New("promu", "promu is the utility tool for building and releasing Prometheus projects")
 )
 
-// Promu represents the base command when called without any subcommands
-var Promu = &cobra.Command{
-	Use:           "promu",
-	Short:         "promu is the utility tool for Prometheus projects",
-	Long:          `promu is the utility tool for Prometheus projects`,
-	SilenceErrors: true,
-	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		var err error
-		info, err = NewProjectInfo()
-		if err != nil {
-			return err
-		}
-		return initConfig()
-	},
-	Run: func(cmd *cobra.Command, args []string) {
-		cmd.Help()
-	},
+// init prepares flags
+func init() {
+	app.HelpFlag.Short('h')
 }
 
 // Execute adds all child commands to the root command sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	if err := Promu.Execute(); err != nil {
-		printErr(err)
-		os.Exit(2)
+	var err error
+	projInfo, err = NewProjectInfo()
+	checkError(err, "Unable to initialize project info")
+
+	command := kingpin.MustParse(app.Parse(os.Args[1:]))
+	sh.Verbose = *verbose
+	initConfig(*configFile)
+
+	info(fmt.Sprintf("Running command: %v %v", command, os.Args[2:]))
+
+	switch command {
+	case buildcmd.FullCommand():
+		runBuild(optArg(*binariesArg, 0, "all"))
+	case checkLicensescmd.FullCommand():
+		runCheckLicenses(optArg(*checkLicLocation, 0, "."), *headerLength, *sourceExtensions)
+	case checksumcmd.FullCommand():
+		runChecksum(optArg(*checksumLocation, 0, "."))
+	case crossbuildcmd.FullCommand():
+		runCrossbuild()
+	case infocmd.FullCommand():
+		runInfo()
+	case releasecmd.FullCommand():
+		runRelease(optArg(*releaseLocation, 0, "."))
+	case tarballcmd.FullCommand():
+		runTarball(optArg(*tarBinariesLocation, 0, "."))
+	case versioncmd.FullCommand():
+		runVersion()
 	}
 }
 
-// init prepares cobra flags
-func init() {
-	Promu.PersistentFlags().StringVar(&cfgFile, "config", "", "Config file (default is ./.promu.yml)")
-	Promu.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Verbose output")
-	Promu.PersistentFlags().BoolVar(&useViper, "viper", true, "Use Viper for configuration")
+// initConfig reads the given config file into the Config object
+func initConfig(filename string) {
+	info(fmt.Sprintf("Using config file: %v", filename))
 
-	viper.BindPFlag("useViper", Promu.PersistentFlags().Lookup("viper"))
-	viper.BindPFlag("verbose", Promu.PersistentFlags().Lookup("verbose"))
+	configData, err := ioutil.ReadFile(filename)
+	checkError(err, "Unable to read config file: "+filename)
+	config = NewConfig()
+	err = yaml.Unmarshal(configData, config)
+	checkError(err, "Unable to parse config file: "+filename)
 }
 
-// initConfig reads in config file and ENV variables if set.
-func initConfig() error {
-	if !useViper {
-		return nil
-	}
-	if cfgFile != "" { // enable ability to specify config file via flag
-		viper.SetConfigFile(cfgFile)
-	}
-
-	viper.SetConfigName(".promu") // name of config file (without extension)
-	viper.AddConfigPath(".")      // look for config in the working directory
-	viper.SetEnvPrefix("promu")
-	viper.AutomaticEnv()                                   // read in environment variables that match
-	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_")) // replacing dots in key names with '_'
-
-	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err != nil {
-		return errors.Wrap(err, "Error in config file")
-	}
-	if verbose {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
-	}
-
-	setDefaultConfigValues()
-	return nil
-}
-
-func setDefaultConfigValues() {
-	if !viper.IsSet("build.binaries") {
-		binaries := []map[string]string{{"name": info.Name, "path": "."}}
-		viper.Set("build.binaries", binaries)
-	}
-	if !viper.IsSet("build.prefix") {
-		viper.Set("build.prefix", ".")
-	}
-	if !viper.IsSet("build.static") {
-		viper.Set("build.static", true)
-	}
-	if !viper.IsSet("crossbuild.platforms") {
-		platforms := defaultMainPlatforms
-		platforms = append(platforms, defaultARMPlatforms...)
-		platforms = append(platforms, defaultPowerPCPlatforms...)
-		platforms = append(platforms, defaultMIPSPlatforms...)
-		platforms = append(platforms, defaultS390Platforms...)
-		viper.Set("crossbuild.platforms", platforms)
-	}
-	if !viper.IsSet("tarball.prefix") {
-		viper.Set("tarball.prefix", ".")
-	}
-	if !viper.IsSet("go.version") {
-		viper.Set("go.version", "1.11")
-	}
-	if !viper.IsSet("go.cgo") {
-		viper.Set("go.cgo", false)
-	}
-	if !viper.IsSet("repository.path") {
-		viper.Set("repository.path", info.Repo)
+// info prints the given message only if running in verbose mode
+func info(message string) {
+	if *verbose {
+		fmt.Println(message)
 	}
 }
 
 // warn prints a non-fatal error
 func warn(err error) {
-	if verbose {
+	if *verbose {
 		fmt.Fprintf(os.Stderr, `/!\ %+v\n`, err)
 	} else {
 		fmt.Fprintln(os.Stderr, `/!\`, err)
@@ -148,7 +167,7 @@ func warn(err error) {
 
 // printErr prints a error
 func printErr(err error) {
-	if verbose {
+	if *verbose {
 		fmt.Fprintf(os.Stderr, "!! %+v\n", err)
 	} else {
 		fmt.Fprintln(os.Stderr, "!!", err)
@@ -161,14 +180,14 @@ func fatal(err error) {
 	os.Exit(1)
 }
 
-// shellOutput executes a shell command and return the trimmed output
+// shellOutput executes a shell command and returns the trimmed output
 func shellOutput(cmd string) string {
 	args := strings.Fields(cmd)
 	out, _ := exec.Command(args[0], args[1:]...).Output()
 	return strings.Trim(string(out), " \n\r")
 }
 
-// fileExists checks if a file exists
+// fileExists checks if a file exists and is not a directory
 func fileExists(path ...string) bool {
 	finfo, err := os.Stat(filepath.Join(path...))
 	if err == nil && !finfo.IsDir() {
@@ -221,11 +240,10 @@ func stringInMapKeys(needle string, haystack map[string][]string) bool {
 	return ok
 }
 
-func hasRequiredConfigurations(configVars ...string) error {
-	for _, configVar := range configVars {
-		if !viper.IsSet(configVar) {
-			return errors.Errorf("missing required '%s' configuration", configVar)
-		}
+// checkError prints the message and exits if the error is not nil
+func checkError(e error, message string) {
+	if e != nil {
+		fmt.Println(message)
+		fatal(e)
 	}
-	return nil
 }

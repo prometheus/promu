@@ -25,23 +25,9 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
 )
 
-// infoCmd represents the info command
-var infoCmd = &cobra.Command{
-	Use:   "info",
-	Short: "Print info about current project and exit",
-	Long:  `Print info about current project and exit`,
-	Run: func(cmd *cobra.Command, args []string) {
-		runInfo()
-	},
-}
-
-// init prepares cobra flags
-func init() {
-	Promu.AddCommand(infoCmd)
-}
+var infocmd = app.Command("info", "Print info about current project and exit")
 
 // ProjectInfo represents current project useful informations.
 type ProjectInfo struct {
@@ -110,12 +96,12 @@ func NewProjectInfo() (ProjectInfo, error) {
 }
 
 func runInfo() {
-	fmt.Println("Name:", info.Name)
-	fmt.Println("Version:", info.Version)
-	fmt.Println("Owner:", info.Owner)
-	fmt.Println("Repo:", info.Repo)
-	fmt.Println("Branch:", info.Branch)
-	fmt.Println("Revision:", info.Revision)
+	fmt.Println("Name:", projInfo.Name)
+	fmt.Println("Version:", projInfo.Version)
+	fmt.Println("Owner:", projInfo.Owner)
+	fmt.Println("Repo:", projInfo.Repo)
+	fmt.Println("Branch:", projInfo.Branch)
+	fmt.Println("Revision:", projInfo.Revision)
 }
 
 // Convert SCP-like URL to SSH URL(e.g. [user@]host.xz:path/to/repo.git/)

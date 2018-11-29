@@ -20,25 +20,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
-
-// crossbuildTarballsCmd represents the crossbuild tarballs command
-var crossbuildTarballsCmd = &cobra.Command{
-	Use:   "tarballs",
-	Short: "Create tarballs from cross-built binaries",
-	Long:  `Create tarballs from cross-built binaries`,
-	Run: func(cmd *cobra.Command, args []string) {
-		runCrossbuildTarballs()
-	},
-}
-
-// init prepares cobra flags
-func init() {
-	crossbuildCmd.AddCommand(crossbuildTarballsCmd)
-}
 
 func runCrossbuildTarballs() {
 
@@ -49,7 +31,7 @@ func runCrossbuildTarballs() {
 
 	fmt.Println(">> building release tarballs")
 	for _, dir := range dirs {
-		viper.Set("tarball.prefix", ".tarballs")
+		config.Tarball.Prefix = ".tarballs"
 
 		if platform := strings.Split(dir.Name(), "-"); len(platform) == 2 {
 			os.Setenv("GOOS", platform[0])
