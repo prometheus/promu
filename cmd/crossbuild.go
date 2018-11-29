@@ -17,7 +17,9 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -183,9 +185,33 @@ func (pg platformGroup) Build(repoPath string) error {
 		return errors.Wrapf(err, "couldn't get current working directory")
 	}
 
-	return sh.RunCommand("docker", "run", "--rm", "-t",
-		"-v", fmt.Sprintf("%s:/app", cwd),
+	ctrName := "promu-crossbuild-" + pg.Name + strconv.FormatInt(time.Now().Unix(), 10)
+	err = sh.RunCommand("docker", "create", "-t",
+		"--name", ctrName,
 		pg.DockerImage,
 		"-i", repoPath,
 		"-p", platformsParam)
+	if err != nil {
+		return err
+	}
+
+	err = sh.RunCommand("docker", "cp",
+		cwd+"/.",
+		ctrName+":/app/")
+	if err != nil {
+		return err
+	}
+
+	err = sh.RunCommand("docker", "start", "-a", ctrName)
+	if err != nil {
+		return err
+	}
+
+	err = sh.RunCommand("docker", "cp", "-a",
+		ctrName+":/app/.build",
+		cwd+"/.build")
+	if err != nil {
+		return err
+	}
+	return sh.RunCommand("docker", "rm", "-f", ctrName)
 }
