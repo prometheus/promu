@@ -13,9 +13,10 @@ jobs:
     executor: golang
 
     steps:
+    - setup_remote_docker
     - checkout
     - run: make promu
-    - run: make check_license style vet unused staticcheck test-short build
+    - run: make check_license style vet unused staticcheck test build
     - store_artifacts:
         path: promu
         destination: /build/promu
@@ -23,12 +24,13 @@ jobs:
     - run: git diff --exit-code
 
   build:
-    machine: true
+    executor: golang
     working_directory: /home/circleci/.go_workspace/src/github.com/prometheus/promu
 
     steps:
+    - setup_remote_docker
     - checkout
-    - run: make promu test
+    - run: make promu
     - run: promu crossbuild -v
     - persist_to_workspace:
         root: .
