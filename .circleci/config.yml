@@ -24,10 +24,11 @@ jobs:
     - run: git diff --exit-code
 
   build:
-    machine: true
+    executor: golang
     working_directory: /home/circleci/.go_workspace/src/github.com/prometheus/promu
 
     steps:
+    - setup_remote_docker
     - checkout
     - run: make promu
     - run: promu crossbuild -v
