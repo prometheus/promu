@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	examplesDir    = "examples"
+	examplesDir    = "doc/examples"
 	testOutputDir  = "testoutput"
 	promuCmdBinary = "promu"
 )
