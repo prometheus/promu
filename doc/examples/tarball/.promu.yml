@@ -3,7 +3,7 @@ repository:
 build:
     binaries:
         - name: tarball-example
-          path: examples/tarball
+          path: doc/examples/tarball
 tarball:
     files:
         - README.md

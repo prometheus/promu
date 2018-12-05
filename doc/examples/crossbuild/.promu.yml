@@ -3,7 +3,7 @@ repository:
 build:
     binaries:
         - name: crossbuild-example
-          path: examples/crossbuild
+          path: doc/examples/crossbuild
 crossbuild:
     platforms:
         - linux/amd64
