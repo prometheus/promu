@@ -1,3 +1,3 @@
 Prometheus example
 
-Run `promu build` to build promtheus
+Run `promu build` to build prometheus
