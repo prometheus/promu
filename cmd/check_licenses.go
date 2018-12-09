@@ -30,7 +30,7 @@ var (
 
 	checkcmd         = app.Command("check", "Check the resources for validity")
 	checkLicensescmd = checkcmd.Command("licenses", "Inspect source files for each file in a given directory")
-	sourceExtensions = checkLicensescmd.Flag("extensions", "Comma separated list of valid source code extenstions (default is .go)").
+	sourceExtensions = checkLicensescmd.Flag("extensions", "Comma separated list of valid source code extensions (default is .go)").
 				Default(".go").Strings()
 	headerLength = checkLicensescmd.Flag("length", "The number of lines to read from the head of the file").
 			Short('n').Default("10").Int()
