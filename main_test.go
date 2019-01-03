@@ -69,6 +69,12 @@ func errcheck(t *testing.T, err error, output string) {
 	}
 }
 
+func assertTrue(t *testing.T, cond bool) {
+	if !cond {
+		t.Error("condition isn't true")
+	}
+}
+
 func assertFileExists(t *testing.T, filepath string) {
 	if _, err := os.Stat(filepath); os.IsNotExist(err) {
 		log.Print("file does not exist: ", filepath)
@@ -122,6 +128,16 @@ func TestPromuBuild_AltConfig(t *testing.T) {
 	errcheck(t, err, string(output))
 
 	assertFileExists(t, path.Join(outputDir, "alt-basic-example"))
+}
+
+func TestPromuBuild_ExtLDFlags(t *testing.T) {
+	outputDir := path.Join(testOutputDir, "extldflags")
+	promuConfig := path.Join(promuExamplesBasic, "extldflags.yml")
+	cmd := exec.Command(promuBinaryAbsPath, "build", "-v", "--config", promuConfig, "--prefix", outputDir)
+	output, err := cmd.CombinedOutput()
+	assertTrue(t, strings.Contains(string(output), "-extldflags '-ltesting -ltesting01 -static'"))
+	errcheck(t, err, string(output))
+	assertFileExists(t, path.Join(outputDir, "extldflags"))
 }
 
 func TestTarball(t *testing.T) {
