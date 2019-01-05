@@ -20,22 +20,12 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
-	kingpin "gopkg.in/alecthomas/kingpin.v2"
 
 	"github.com/prometheus/promu/util/sh"
 )
 
 var (
-	tarballcmd = app.Command("tarball", "Create a tarball from the built Go project")
-
-	tarballPrefixSet bool
-	tarballPrefix    = tarballcmd.Flag("prefix", "Specific dir to store tarballs").
-				PreAction(func(c *kingpin.ParseContext) error {
-			tarballPrefixSet = true
-			return nil
-		}).
-		Default(".").String()
-
+	tarballcmd          = app.Command("tarball", "Create a tarball from the built Go project")
 	tarBinariesLocation = tarballcmd.Arg("location", "location of binaries to tar").Default(".").Strings()
 )
 
