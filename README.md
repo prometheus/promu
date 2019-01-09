@@ -46,7 +46,7 @@ Commands:
 
 ## `.promu.yml` config file
 
-See documentation example [here](doc/examples/.promu.yml)
+See documentation example [here](doc/examples/prometheus/.promu.yml)
 
 ## Compatibility
 
