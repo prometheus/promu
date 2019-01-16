@@ -170,9 +170,13 @@ func getLdflags(info ProjectInfo) string {
 		ldflags = append(ldflags, fmt.Sprintf("-X main.Version=%s", info.Version))
 	}
 
-	staticBinary := config.Build.Static
-	if staticBinary && goos != "darwin" && goos != "solaris" && !stringInSlice(`-extldflags '-static'`, ldflags) {
-		ldflags = append(ldflags, `-extldflags '-static'`)
+	extLDFlags := config.Build.ExtLDFlags
+	if config.Build.Static && goos != "darwin" && goos != "solaris" && !stringInSlice("-static", extLDFlags) {
+		extLDFlags = append(extLDFlags, "-static")
+	}
+
+	if len(extLDFlags) > 0 {
+		ldflags = append(ldflags, fmt.Sprintf("-extldflags '%s'", strings.Join(extLDFlags, " ")))
 	}
 
 	return strings.Join(ldflags[:], " ")

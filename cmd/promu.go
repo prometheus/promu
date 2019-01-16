@@ -42,11 +42,12 @@ type Binary struct {
 // Config contains the Promu Command Configuration
 type Config struct {
 	Build struct {
-		Binaries []Binary
-		Flags    string
-		LDFlags  string
-		Prefix   string
-		Static   bool
+		Binaries   []Binary
+		Flags      string
+		LDFlags    string
+		ExtLDFlags []string
+		Prefix     string
+		Static     bool
 	}
 	Crossbuild struct {
 		Platforms []string

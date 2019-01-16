@@ -1,0 +1,10 @@
+repository:
+    path: github.com/prometheus/promu
+build:
+    binaries:
+        - name: extldflags
+          path: doc/examples/basic
+    extldflags:
+      - -ltesting
+      - -ltesting01
+
