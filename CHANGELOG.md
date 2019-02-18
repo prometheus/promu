@@ -1,3 +1,8 @@
+## 0.3.0 / 2019-02-18
+
+* [FEATURE] Make extldflags extensible by configuration. #125
+* [ENHANCEMENT] Avoid bind-mounting to allow building with a remote docker engine #95
+
 ## 0.2.0 / 2018-11-07
 
 * [FEATURE] Adding changes to support s390x
