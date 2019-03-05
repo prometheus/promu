@@ -136,5 +136,6 @@ func findVersion() (string, error) {
 			return readFile(file), nil
 		}
 	}
-	return "", errors.New("missing `VERSION` or `version/VERSION` file")
+
+	return shellOutput("git describe --tags --always --dirty --broken"), nil
 }
