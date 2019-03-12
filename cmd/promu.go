@@ -79,7 +79,7 @@ func NewConfig() *Config {
 	platforms = append(platforms, defaultS390Platforms...)
 	config.Crossbuild.Platforms = platforms
 	config.Tarball.Prefix = "."
-	config.Go.Version = "1.11"
+	config.Go.Version = "1.12"
 	config.Go.CGo = false
 	config.Repository.Path = projInfo.Repo
 
