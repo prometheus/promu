@@ -50,7 +50,7 @@ jobs:
     - run: make promu
     - run: promu crossbuild tarballs
     - run: promu checksum .tarballs
-    - run: promu release --overwrite .tarballs
+    - run: promu release .tarballs
     - store_artifacts:
         path: .tarballs
         destination: releases

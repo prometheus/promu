@@ -33,8 +33,6 @@ var (
 	releasecmd     = app.Command("release", "Upload all release files to the Github release")
 	allowedRetries = releasecmd.Flag("retry", "Number of retries to perform when upload fails").
 			Default("2").Int()
-	overwriteDraft = releasecmd.Flag("overwrite", "Overwrite existing files (only effective if the release is a draft)").
-			Default("false").Bool()
 	releaseLocation = releasecmd.Arg("location", "Location of files to release").Default(".").Strings()
 )
 
@@ -124,7 +122,7 @@ func releaseFile(ctx context.Context, client *github.Client, release *github.Rep
 				if asset.GetName() == filename {
 					var err error
 					stop = true
-					if *overwriteDraft && release.GetDraft() {
+					if release.GetDraft() {
 						_, err = client.Repositories.DeleteReleaseAsset(ctx, projInfo.Owner, projInfo.Name, asset.GetID())
 						if err != nil {
 							err = errors.Wrapf(err, "failed to delete existing asset %q", filename)
