@@ -5,4 +5,5 @@ run:
 linters:
   enable:
   - staticcheck
+  - govet
   disable-all: true
