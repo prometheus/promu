@@ -9,5 +9,5 @@ go:
 go_import_path: github.com/prometheus/promu
 
 script:
-- make check_license style vet staticcheck unused test-short
+- make check_license style vet lint unused test-short
 - git diff --exit-code
