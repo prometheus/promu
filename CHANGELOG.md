@@ -1,3 +1,9 @@
+## 0.4.0 / 2019-05-03
+
+* [FEATURE] Fallback to `git describe` output if no VERSION. #130
+* [BUGFIX] cmd/tarball: restore --prefix flag. #133
+* [BUGFIX] cmd/release: don't leak credentials in case of error. #136
+
 ## 0.3.0 / 2019-02-18
 
 * [FEATURE] Make extldflags extensible by configuration. #125
