@@ -31,6 +31,7 @@ import (
 
 var (
 	releasecmd     = app.Command("release", "Upload all release files to the Github release")
+	timeout        = releasecmd.Flag("timeout", "Upload timeout").Duration()
 	allowedRetries = releasecmd.Flag("retry", "Number of retries to perform when upload fails").
 			Default("2").Int()
 	releaseLocation = releasecmd.Arg("location", "Location of files to release").Default(".").Strings()
@@ -43,6 +44,11 @@ func runRelease(location string) {
 	}
 
 	ctx := context.Background()
+	if *timeout != time.Duration(0) {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, *timeout)
+		defer cancel()
+	}
 	client := github.NewClient(
 		oauth2.NewClient(
 			ctx,
