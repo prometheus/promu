@@ -137,5 +137,5 @@ func findVersion() (string, error) {
 		}
 	}
 
-	return shellOutput("git describe --tags --always --dirty --broken"), nil
+	return shellOutput("git describe --tags --always --dirty"), nil
 }
