@@ -111,6 +111,25 @@ This is the first stable release.
 * [FEATURE] Some feature.
 `,
 		},
+		{
+			in: `## 1.0.0 / 2016-01-02
+
+### Breaking changes!
+
+* [BUGFIX] Some fix.
+* [FEATURE] Some feature.
+
+## 0.0.1 / 2016-01-02
+
+* [BUGFIX] Another fix.`,
+			version: "1.0.0",
+			header:  "1.0.0 / 2016-01-02",
+			body: `### Breaking changes!
+
+* [BUGFIX] Some fix.
+* [FEATURE] Some feature.
+`,
+		},
 	} {
 		tc := tc
 		t.Run("", func(t *testing.T) {

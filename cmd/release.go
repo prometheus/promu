@@ -247,7 +247,7 @@ func getChangelog(version string, rc io.ReadCloser) (string, string) {
 		case strings.HasPrefix(text, "## "+version+" "):
 			reading = true
 			header = strings.TrimSpace(strings.TrimPrefix(text, "##"))
-		case strings.HasPrefix(text, "##"):
+		case strings.HasPrefix(text, "## "):
 			reading = false
 		case reading:
 			if len(s) == 0 && strings.TrimSpace(text) == "" {
