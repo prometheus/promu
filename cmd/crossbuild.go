@@ -41,7 +41,7 @@ var (
 		"openbsd/armv7", "netbsd/armv6", "netbsd/armv7",
 	}
 	defaultPowerPCPlatforms = []string{
-		"linux/ppc64", "linux/ppc64le",
+		"aix/ppc64", "linux/ppc64", "linux/ppc64le",
 	}
 	defaultMIPSPlatforms = []string{
 		"linux/mips", "linux/mipsle",
