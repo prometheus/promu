@@ -15,10 +15,15 @@
 package cmd
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -35,7 +40,16 @@ var (
 	allowedRetries = releasecmd.Flag("retry", "Number of retries to perform when upload fails").
 			Default("2").Int()
 	releaseLocation = releasecmd.Arg("location", "Location of files to release").Default(".").Strings()
+	versionRe       = regexp.MustCompile(`^\d+\.\d+\.\d+(-.+)?$`)
 )
+
+func isPrerelease(version string) (bool, error) {
+	matches := versionRe.FindStringSubmatch(version)
+	if matches == nil {
+		return false, errors.Errorf("invalid version %s", version)
+	}
+	return matches[1] != "", nil
+}
 
 func runRelease(location string) {
 	token := os.Getenv("GITHUB_TOKEN")
@@ -58,11 +72,18 @@ func runRelease(location string) {
 		),
 	)
 
+	prerelease, err := isPrerelease(projInfo.Version)
+	if err != nil {
+		fatal(err)
+	}
+
 	// Find the GitHub release matching with the tag. We need to list all
 	// releases because it is the only way to get draft releases too.
-	tag := fmt.Sprintf("v%s", projInfo.Version)
-	var release *github.RepositoryRelease
-	opts := &github.ListOptions{}
+	var (
+		release *github.RepositoryRelease
+		opts    = &github.ListOptions{}
+		tag     = fmt.Sprintf("v%s", projInfo.Version)
+	)
 	for {
 		releases, resp, err := client.Repositories.ListReleases(ctx, projInfo.Owner, projInfo.Name, opts)
 		if err != nil {
@@ -80,7 +101,31 @@ func runRelease(location string) {
 		opts.Page = resp.NextPage
 	}
 	if release == nil {
-		fatal(errors.Errorf("failed to find a release with tag %s", tag))
+		// Create a draft release if none exists already.
+		var (
+			err        error
+			draft      = true
+			name, body = getChangelog(projInfo.Version, readChangelog())
+		)
+		if name != "" {
+			release, _, err = client.Repositories.CreateRelease(
+				ctx,
+				projInfo.Owner,
+				projInfo.Name,
+				&github.RepositoryRelease{
+					TagName:         &tag,
+					TargetCommitish: &projInfo.Revision,
+					Name:            &name,
+					Body:            &body,
+					Draft:           &draft,
+					Prerelease:      &prerelease,
+				})
+			if err != nil {
+				fatal(errors.Wrap(err, fmt.Sprintf("failed to create a draft release for %s", projInfo.Version)))
+			}
+		} else {
+			fmt.Println("fail to parse CHANGELOG.md")
+		}
 	}
 
 	if err := filepath.Walk(location, releaseFile(ctx, client, release)); err != nil {
@@ -175,4 +220,42 @@ func releaseFile(ctx context.Context, client *github.Client, release *github.Rep
 
 		return nil
 	}
+}
+
+func readChangelog() io.ReadCloser {
+	f, err := os.Open("CHANGELOG.md")
+	if err != nil {
+		fmt.Printf("fail to read CHANGELOG.md: %v\n", err)
+		return ioutil.NopCloser(&bytes.Buffer{})
+	}
+	return f
+}
+
+// getChangelog returns the changelog's header and body for a given version.
+func getChangelog(version string, rc io.ReadCloser) (string, string) {
+	defer rc.Close()
+
+	var (
+		scanner = bufio.NewScanner(rc)
+		s       []string
+		header  string
+		reading bool
+	)
+	for (len(s) == 0 || reading) && scanner.Scan() {
+		text := scanner.Text()
+		switch {
+		case strings.HasPrefix(text, "## "+version+" "):
+			reading = true
+			header = strings.TrimSpace(strings.TrimPrefix(text, "##"))
+		case strings.HasPrefix(text, "## "):
+			reading = false
+		case reading:
+			if len(s) == 0 && strings.TrimSpace(text) == "" {
+				continue
+			}
+			s = append(s, scanner.Text())
+		}
+	}
+
+	return header, strings.Join(s, "\n")
 }
