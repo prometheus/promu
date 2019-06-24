@@ -13,7 +13,9 @@
 
 include Makefile.common
 
-$(FIRST_GOPATH)/bin/promu:
+.PHONY: build
+build:
+	@echo ">> installing promu"
 	GO111MODULE=$(GO111MODULE) GOOS= GOARCH= $(GO) install github.com/prometheus/promu
-
-.PHONY: $(FIRST_GOPATH)/bin/promu
+	@echo ">> rebuilding binaries using promu"
+	GO111MODULE=$(GO111MODULE) $(PROMU) build --prefix $(PREFIX)
