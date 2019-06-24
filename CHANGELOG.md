@@ -1,3 +1,10 @@
+## v0.5.0 / 2019-06-21
+
+* [CHANGE] Remove --broken from git describe. #145
+* [FEATURE] Add support for aix/ppc64. #151
+* [ENHANCEMENT] cmd/release: add --timeout option. #142
+* [ENHANCEMENT] cmd/release: create release in GitHub if none exists. #148
+
 ## 0.4.0 / 2019-05-03
 
 * [FEATURE] Fallback to `git describe` output if no VERSION. #130
