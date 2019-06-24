@@ -1,0 +1,16 @@
+description: >
+  Cross-build and store the binaries.
+
+machine:
+  enabled: true
+
+steps:
+- setup_environment
+- run: promu crossbuild -v
+- persist_to_workspace:
+    root: .
+    paths:
+    - .build
+- store_artifacts:
+    path: .build
+    destination: /build

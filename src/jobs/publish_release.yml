@@ -1,0 +1,24 @@
+description: >
+  Build and publish binaries and container images for a given release tag.
+
+docker:
+- image: circleci/golang
+
+steps:
+- setup_build_environment
+- run: promu crossbuild tarballs
+- run: promu checksum .tarballs
+- run: promu release .tarballs
+- store_artifacts:
+    path: .tarballs
+    destination: releases
+- publish_release_images:
+    registry: docker.io
+    organization: prom
+    login_variable: DOCKER_LOGIN
+    password_variable: DOCKER_PASSWORD
+- publish_release_images:
+    registry: quay.io
+    organization: prometheus
+    login_variable: QUAY_LOGIN
+    password_variable: QUAY_PASSWORD

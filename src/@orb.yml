@@ -1,0 +1,5 @@
+version: 2.1
+
+description: |
+  Orb for building and publishing Prometheus artefacts. Full orb
+  source code: https://github.com/prometheus/circleci

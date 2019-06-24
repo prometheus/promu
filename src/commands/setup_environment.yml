@@ -1,0 +1,6 @@
+description: >
+  Setup the minimal environment for the CI.
+
+steps:
+- checkout
+- run: make promu

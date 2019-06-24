@@ -1,0 +1,25 @@
+description: >
+  Run 'make' and store the resulting binary.
+
+parameters:
+  version:
+    description: Go version
+    type: string
+  binary:
+    description: Binary name
+    type: string
+  resource_class:
+    description: Resource class
+    type: string
+    default: medium
+
+executor:
+  name: golang
+  version: << parameters.version >>
+  resource_class: << parameters.resource_class >>
+
+steps:
+- setup_environment
+- run: make
+- store_artifact:
+    file: << parameters.binary >>

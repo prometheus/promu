@@ -1,0 +1,18 @@
+description: >
+  Build and publish container images from the master branch.
+
+docker:
+- image: circleci/golang
+
+steps:
+- setup_build_environment
+- publish_images:
+    registry: docker.io
+    organization: prom
+    login_variable: DOCKER_LOGIN
+    password_variable: DOCKER_PASSWORD
+- publish_images:
+    registry: quay.io
+    organization: prometheus
+    login_variable: QUAY_LOGIN
+    password_variable: QUAY_PASSWORD

@@ -1,0 +1,17 @@
+description: >
+  Store a file as a build artifact.
+
+parameters:
+  file:
+    description: source file
+    type: string
+  directory:
+    description: destination directory
+    type: string
+    default: /build
+
+steps:
+- store_artifacts:
+    path: << parameters.file >>
+    destination: << parameters.directory >>/<< parameters.file >>
+- run: rm -v << parameters.file >>

@@ -1,0 +1,29 @@
+description: >
+  Build and publish release images to a container image registry.
+
+parameters:
+  registry:
+    description: Registry address
+    type: string
+  organization:
+    description: Registry organization
+    type: string
+  login_variable:
+    description: Environment variable holding the registry login
+    type: env_var_name
+  password_variable:
+    description: Environment variable holding the registry password
+    type: env_var_name
+
+steps:
+- run: make docker DOCKER_IMAGE_TAG="$CIRCLE_TAG" DOCKER_REPO=<< parameters.registry >>/<< parameters.organization >>
+- run: docker images
+- run: docker login -u $<< parameters.login_variable >> -p $<< parameters.password_variable >> << parameters.registry >>
+- run: make docker-publish DOCKER_IMAGE_TAG="$CIRCLE_TAG" DOCKER_REPO=<< parameters.registry >>/<< parameters.organization >>
+- run: make docker-manifest DOCKER_IMAGE_TAG="$CIRCLE_TAG" DOCKER_REPO=<< parameters.registry >>/<< parameters.organization >>
+- run: |
+    if [[ "$CIRCLE_TAG" =~ ^v[0-9]+(\.[0-9]+){2}$ ]]; then
+      make docker-tag-latest DOCKER_IMAGE_TAG="$CIRCLE_TAG" DOCKER_REPO=<< parameters.registry >>/<< parameters.organization >>
+      make docker-publish DOCKER_IMAGE_TAG="latest" DOCKER_REPO=<< parameters.registry >>/<< parameters.organization >>
+      make docker-manifest DOCKER_IMAGE_TAG="latest" DOCKER_REPO=<< parameters.registry >>/<< parameters.organization >>
+    fi
