@@ -70,19 +70,32 @@ func buildBinary(ext string, prefix string, ldflags string, binary Binary) {
 	binaryName := fmt.Sprintf("%s%s", binary.Name, ext)
 	fmt.Printf(" >   %s\n", binaryName)
 
-	repoPath := config.Repository.Path
 	flags := config.Build.Flags
 
+	rootWorkDir, err := os.Getwd()
+	if err != nil {
+		fatal(errors.Wrap(err, "get current workdir"))
+	}
+
 	params := []string{"build",
-		"-o", path.Join(prefix, binaryName),
+		"-o", path.Join(rootWorkDir, prefix, binaryName),
 		"-ldflags", ldflags,
 	}
 
 	params = append(params, sh.SplitParameters(flags)...)
-	params = append(params, path.Join(repoPath, binary.Path))
-	info("Building binary: " + "go " + strings.Join(params, " "))
+
+	// With go modules the build needs to happen in the package directory.
+	// When package has its own go.mod it will be used, otherwise
+	// the build will use the first go.mod it finds in the parent directories.
+	if err := os.Chdir(binary.Path); err != nil {
+		fatal(errors.Wrap(err, "change workdir"))
+	}
+	info("Workdir:" + binary.Path + ", Building binary: " + "go " + strings.Join(params, " "))
 	if err := sh.RunCommand("go", params...); err != nil {
 		fatal(errors.Wrap(err, "command failed: "+strings.Join(params, " ")))
+	}
+	if err := os.Chdir(rootWorkDir); err != nil {
+		fatal(errors.Wrap(err, "revert workdir to root dir"))
 	}
 }
 
