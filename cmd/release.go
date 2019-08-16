@@ -124,7 +124,7 @@ func runRelease(location string) {
 				fatal(errors.Wrap(err, fmt.Sprintf("failed to create a draft release for %s", projInfo.Version)))
 			}
 		} else {
-			fmt.Println("fail to parse CHANGELOG.md")
+			fatal(errors.New("unable to locate release information in changelog for selected version '" + projInfo.Version + "'."))
 		}
 	}
 
@@ -232,6 +232,7 @@ func readChangelog() io.ReadCloser {
 }
 
 // getChangelog returns the changelog's header and body for a given version.
+// Returns empty strings if the given version is not found.
 func getChangelog(version string, rc io.ReadCloser) (string, string) {
 	defer rc.Close()
 
@@ -240,11 +241,17 @@ func getChangelog(version string, rc io.ReadCloser) (string, string) {
 		s       []string
 		header  string
 		reading bool
+
+		releaseHeaderPattern = "## " + strings.ReplaceAll(version, ".", "\\.") + " / \\d{4}-\\d{2}-\\d{2}"
 	)
 	for (len(s) == 0 || reading) && scanner.Scan() {
 		text := scanner.Text()
 		switch {
-		case strings.HasPrefix(text, "## "+version+" "):
+		case strings.HasPrefix(text, "## "+version):
+			if valid, _ := regexp.MatchString(releaseHeaderPattern, text); !valid {
+				fatal(errors.New("Found invalid release header in changelog for version '" + version + "'.  " +
+					"Expected format '## " + version + " / YYYY-MM-DD'. Found '" + text + "'"))
+			}
 			reading = true
 			header = strings.TrimSpace(strings.TrimPrefix(text, "##"))
 		case strings.HasPrefix(text, "## "):
