@@ -65,7 +65,7 @@ func TestGetChangelog(t *testing.T) {
 	}{
 		{
 			in:      "",
-			version: "1.0.0",
+			version: "1.0.0-notfound",
 			header:  "",
 			body:    "",
 		},
@@ -147,7 +147,10 @@ This is the first stable release.
 	} {
 		tc := tc
 		t.Run("", func(t *testing.T) {
-			header, body := getChangelog(tc.version, ioutil.NopCloser(bytes.NewBufferString(tc.in)))
+			header, body, err := getChangelog(tc.version, ioutil.NopCloser(bytes.NewBufferString(tc.in)))
+			if err != nil && tc.version != "1.0.0-notfound" {
+				t.Fatal(err)
+			}
 			if body != tc.body {
 				t.Fatalf("expected body %q, got %q", tc.body, body)
 			}
