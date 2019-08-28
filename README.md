@@ -1,6 +1,4 @@
-# Prometheus Utility Tool [![Build Status](https://travis-ci.org/prometheus/promu.svg)][travis]
-
-[![CircleCI](https://circleci.com/gh/prometheus/promu/tree/master.svg?style=shield)][circleci]
+# Prometheus Utility Tool [![CircleCI](https://circleci.com/gh/prometheus/promu/tree/master.svg?style=shield)][circleci]
 
 ## Usage
 
@@ -66,4 +64,3 @@ Refer to [CONTRIBUTING.md](CONTRIBUTING.md)
 Apache License 2.0, see [LICENSE](LICENSE).
 
 [circleci]: https://circleci.com/gh/prometheus/promu
-[travis]: https://travis-ci.org/prometheus/promu
