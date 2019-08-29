@@ -44,7 +44,7 @@ var (
 			prefixFlagSet = true
 			return nil
 		}).String()
-	binariesArg = buildcmd.Arg("binary-names", "List of binaries to build").Default("all").Strings()
+	binariesArg = buildcmd.Arg("binary-names", "Comma separated list of binaries to build").Default("all").Strings()
 )
 
 // Check if binary names passed to build command are in the config.
