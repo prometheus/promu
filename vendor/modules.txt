@@ -1,3 +1,5 @@
+# github.com/Masterminds/semver v1.4.2
+github.com/Masterminds/semver
 # github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc
 github.com/alecthomas/template
 github.com/alecthomas/template/parse

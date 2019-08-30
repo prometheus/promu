@@ -27,6 +27,7 @@ import (
 	"github.com/pkg/errors"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 
+	"github.com/prometheus/promu/pkg/repository"
 	"github.com/prometheus/promu/util/sh"
 )
 
@@ -141,7 +142,7 @@ func runBuild(binariesString string) {
 	}
 }
 
-func getLdflags(info ProjectInfo) string {
+func getLdflags(info repository.Info) string {
 	var ldflags []string
 
 	if len(strings.TrimSpace(config.Build.LDFlags)) > 0 {

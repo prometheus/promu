@@ -23,6 +23,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/prometheus/promu/pkg/repository"
 	"github.com/prometheus/promu/util/sh"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 	yaml "gopkg.in/yaml.v2"
@@ -95,7 +96,7 @@ var (
 			Default(DefaultConfigFilename).String()
 	verbose  = app.Flag("verbose", "Verbose output").Short('v').Bool()
 	config   *Config
-	projInfo ProjectInfo
+	projInfo repository.Info
 
 	// app represents the base command
 	app = kingpin.New("promu", "promu is the utility tool for building and releasing Prometheus projects")
@@ -110,7 +111,7 @@ func init() {
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	var err error
-	projInfo, err = NewProjectInfo()
+	projInfo, err = repository.NewInfo(warn)
 	checkError(err, "Unable to initialize project info")
 
 	command := kingpin.MustParse(app.Parse(os.Args[1:]))
@@ -124,6 +125,10 @@ func Execute() {
 		runBuild(optArg(*binariesArg, 0, "all"))
 	case checkLicensescmd.FullCommand():
 		runCheckLicenses(optArg(*checkLicLocation, 0, "."), *headerLength, *sourceExtensions)
+	case checkChangelogcmd.FullCommand():
+		if err := runCheckChangelog(*checkChangelogPath, *checkChangelogVersion); err != nil {
+			fatal(err)
+		}
 	case checksumcmd.FullCommand():
 		runChecksum(optArg(*checksumLocation, 0, "."))
 	case crossbuildcmd.FullCommand():
