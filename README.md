@@ -48,7 +48,7 @@ See documentation example [here](doc/examples/prometheus/.promu.yml)
 
 ## Compatibility
 
-* Go 1.6+
+* Go 1.12+
 
 ## More information
 
