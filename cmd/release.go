@@ -15,15 +15,10 @@
 package cmd
 
 import (
-	"bufio"
-	"bytes"
 	"context"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"time"
 
@@ -31,6 +26,7 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 
+	"github.com/prometheus/promu/pkg/changelog"
 	"github.com/prometheus/promu/util/retry"
 )
 
@@ -40,16 +36,7 @@ var (
 	allowedRetries = releasecmd.Flag("retry", "Number of retries to perform when upload fails").
 			Default("2").Int()
 	releaseLocation = releasecmd.Arg("location", "Location of files to release").Default(".").Strings()
-	versionRe       = regexp.MustCompile(`^\d+\.\d+\.\d+(-.+)?$`)
 )
-
-func isPrerelease(version string) (bool, error) {
-	matches := versionRe.FindStringSubmatch(version)
-	if matches == nil {
-		return false, errors.Errorf("invalid version %s", version)
-	}
-	return matches[1] != "", nil
-}
 
 func runRelease(location string) {
 	token := os.Getenv("GITHUB_TOKEN")
@@ -72,7 +59,7 @@ func runRelease(location string) {
 		),
 	)
 
-	prerelease, err := isPrerelease(projInfo.Version)
+	semVer, err := projInfo.ToSemver()
 	if err != nil {
 		fatal(err)
 	}
@@ -101,12 +88,20 @@ func runRelease(location string) {
 		opts.Page = resp.NextPage
 	}
 	if release == nil {
-		releaseName, releaseBody, err := getChangelog(projInfo.Version, readChangelog())
+		f, err := os.Open("CHANGELOG.md")
 		if err != nil {
 			fatal(err)
 		}
+		defer f.Close()
+
+		entry, err := changelog.ReadEntry(f, projInfo.Version)
+		if err != nil {
+			fatal(err)
+		}
+		name := entry.Name()
 		// Create a draft release if none exists already.
 		draft := true
+		prerelease := semVer.Prerelease() != ""
 		release, _, err = client.Repositories.CreateRelease(
 			ctx,
 			projInfo.Owner,
@@ -114,8 +109,8 @@ func runRelease(location string) {
 			&github.RepositoryRelease{
 				TagName:         &tag,
 				TargetCommitish: &projInfo.Revision,
-				Name:            &releaseName,
-				Body:            &releaseBody,
+				Name:            &name,
+				Body:            &entry.Text,
 				Draft:           &draft,
 				Prerelease:      &prerelease,
 			})
@@ -216,52 +211,4 @@ func releaseFile(ctx context.Context, client *github.Client, release *github.Rep
 
 		return nil
 	}
-}
-
-func readChangelog() io.ReadCloser {
-	f, err := os.Open("CHANGELOG.md")
-	if err != nil {
-		fmt.Printf("fail to read CHANGELOG.md: %v\n", err)
-		return ioutil.NopCloser(&bytes.Buffer{})
-	}
-	return f
-}
-
-// getChangelog returns the changelog's header/name and body for a given release version.
-// Returns an error if the version is not found.
-func getChangelog(version string, rc io.ReadCloser) (releaseHeader string, releaseBody string, err error) {
-	defer rc.Close()
-
-	var (
-		scanner = bufio.NewScanner(rc)
-		s       []string
-		reading bool
-
-		releaseHeaderPattern = "## " + strings.ReplaceAll(version, ".", "\\.") + " / \\d{4}-\\d{2}-\\d{2}"
-	)
-	for (len(s) == 0 || reading) && scanner.Scan() {
-		text := scanner.Text()
-		switch {
-		case strings.HasPrefix(text, "## "+version):
-			if valid, _ := regexp.MatchString(releaseHeaderPattern, text); !valid {
-				return "", "", errors.New("Found invalid release header in changelog for version '" + version + "'.  " +
-					"Expected format = '" + releaseHeaderPattern + "'. Found '" + text + "'")
-			}
-			reading = true
-			releaseHeader = strings.TrimSpace(strings.TrimPrefix(text, "##"))
-		case strings.HasPrefix(text, "## "):
-			reading = false
-		case reading:
-			if len(s) == 0 && strings.TrimSpace(text) == "" {
-				continue
-			}
-			s = append(s, scanner.Text())
-		}
-	}
-
-	if releaseHeader == "" {
-		return "", "", errors.New("unable to locate release information in changelog for selected version '" + projInfo.Version + "'." +
-			"Expected format = '" + releaseHeaderPattern + "'.")
-	}
-	return releaseHeader, strings.Join(s, "\n"), nil
 }

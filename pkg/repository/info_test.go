@@ -12,11 +12,48 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cmd
+package repository
 
 import (
 	"testing"
 )
+
+func TestToSemver(t *testing.T) {
+	for _, tc := range []struct {
+		version string
+
+		exp string
+	}{
+		{
+			version: "1.0.0",
+			exp:     "1.0.0",
+		},
+		{
+			version: "1.0.0-rc0",
+			exp:     "1.0.0-rc0",
+		},
+		{
+			version: "x1.0.0-rc0",
+		},
+		{
+			version: "v1.0.0-rc0",
+		},
+	} {
+		tc := tc
+		t.Run("", func(t *testing.T) {
+			got, err := Info{Version: tc.version}.ToSemver()
+			if err != nil {
+				if tc.exp != "" {
+					t.Fatalf("expected no error, got %v", err)
+				}
+				return
+			}
+			if got.String() != tc.exp {
+				t.Fatalf("expected %q, got %q", tc.exp, got)
+			}
+		})
+	}
+}
 
 func TestRepoLocation(t *testing.T) {
 	var repoTests = []struct {

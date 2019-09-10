@@ -22,6 +22,8 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+
+	"github.com/prometheus/promu/pkg/changelog"
 )
 
 var (
@@ -36,6 +38,12 @@ var (
 			Short('n').Default("10").Int()
 	checkLicLocation = checkLicensescmd.Arg("location", "Directory path to check licenses").
 				Default(".").Strings()
+
+	checkChangelogcmd  = checkcmd.Command("changelog", "Check that CHANGELOG.md follows the guidelines")
+	checkChangelogPath = checkChangelogcmd.Flag("location", "Path to CHANGELOG.md").
+				Default("CHANGELOG.md").String()
+	checkChangelogVersion = checkChangelogcmd.Flag("version", "Version to check (defaults to the current version)").
+				Default("").String()
 )
 
 func runCheckLicenses(path string, n int, extensions []string) {
@@ -128,4 +136,34 @@ func suffixInSlice(needle string, haystack []string) bool {
 	}
 
 	return exists
+}
+
+func runCheckChangelog(path string, version string) error {
+	if version == "" {
+		_, err := projInfo.ToSemver()
+		if err != nil {
+			return errors.Wrap(err, "invalid semver version")
+		}
+
+		version = projInfo.Version
+	}
+
+	f, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	entry, err := changelog.ReadEntry(f, version)
+	if err != nil {
+		return errors.Wrapf(err, "%s:", path)
+	}
+
+	// Check that the changes are ordered correctly.
+	err = entry.Changes.Sorted()
+	if err != nil {
+		return errors.Wrap(err, "invalid changelog entry")
+	}
+
+	return nil
 }

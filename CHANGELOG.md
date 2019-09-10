@@ -1,4 +1,4 @@
-## v0.5.0 / 2019-06-21
+## 0.5.0 / 2019-06-21
 
 * [CHANGE] Remove --broken from git describe. #145
 * [FEATURE] Add support for aix/ppc64. #151
