@@ -87,11 +87,10 @@ func (k Kinds) String() string {
 
 // Before returns whether the receiver should sort before the other.
 func (k Kinds) Before(other Kinds) bool {
-	if len(k) == 0 {
-		return len(other) == 0
-	}
 	if len(other) == 0 {
 		return true
+	} else if len(k) == 0 {
+		return false
 	}
 
 	n := len(k)
