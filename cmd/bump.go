@@ -41,9 +41,10 @@ var (
 )
 
 type pullRequest struct {
-	Number int
-	Title  string
-	Kinds  changelog.Kinds
+	Number      int
+	Title       string
+	Contributor string
+	Kinds       changelog.Kinds
 }
 
 var (
@@ -63,7 +64,7 @@ const changelogTmpl = `## {{ .Version }} / {{ .Date }}
 {{ range .PullRequests }}
 * [{{ .Kinds.String }}] {{ makeSentence .Title }} #{{ .Number }}
 {{- end }}
-<!-- Skipped pull requests:{{ range .Skipped }}
+<!-- Unclassified pull requests:{{ range .Skipped }}
 * [{{ .Kinds.String }}] {{ makeSentence .Title }} #{{ .Number }}
 {{- end }} -->
 
@@ -74,9 +75,27 @@ Contributors:
 
 `
 
-func writeChangelog(w io.Writer, version string, prs, skippedPrs []pullRequest, contributors []string) error {
-	sort.SliceStable(prs, func(i int, j int) bool { return prs[i].Kinds.Before(prs[j].Kinds) })
-	sort.SliceStable(skippedPrs, func(i int, j int) bool { return skippedPrs[i].Kinds.Before(skippedPrs[j].Kinds) })
+func writeChangelog(w io.Writer, version string, prs []pullRequest) error {
+	var (
+		visible, hidden  []pullRequest
+		uniqContributors = map[string]struct{}{"": struct{}{}}
+		contributors     []string
+	)
+	for _, pr := range prs {
+		if len(pr.Kinds) > 0 {
+			visible = append(visible, pr)
+		} else {
+			hidden = append(hidden, pr)
+		}
+
+		if _, ok := uniqContributors[pr.Contributor]; ok {
+			continue
+		}
+		uniqContributors[pr.Contributor] = struct{}{}
+		contributors = append(contributors, pr.Contributor)
+	}
+	sort.SliceStable(visible, func(i int, j int) bool { return visible[i].Kinds.Before(visible[j].Kinds) })
+	sort.SliceStable(hidden, func(i int, j int) bool { return hidden[i].Kinds.Before(hidden[j].Kinds) })
 	sort.Strings(contributors)
 
 	tmpl, err := template.New("changelog").Funcs(
@@ -93,8 +112,8 @@ func writeChangelog(w io.Writer, version string, prs, skippedPrs []pullRequest, 
 	return tmpl.Execute(w, &changelogData{
 		Version:      version,
 		Date:         time.Now().Format("2006-01-02"),
-		PullRequests: prs,
-		Skipped:      skippedPrs,
+		PullRequests: visible,
+		Skipped:      hidden,
 		Contributors: contributors,
 	})
 }
@@ -141,13 +160,10 @@ func runBumpVersion(changelogPath, versionPath string, bumpLevel string, preRele
 	lastCommitSHA := commit.GetSHA()
 
 	// Gather all pull requests merged since the last tag.
-	var (
-		prs, skipped     []pullRequest
-		uniqContributors = make(map[string]struct{})
-	)
+	var ghPrs []*github.PullRequest
 	err = githubUtil.ReadAll(
 		func(opts *github.ListOptions) (*github.Response, error) {
-			ghPrs, resp, err := client.PullRequests.List(ctx, projInfo.Owner, projInfo.Name, &github.PullRequestListOptions{
+			prs, resp, err := client.PullRequests.List(ctx, projInfo.Owner, projInfo.Name, &github.PullRequestListOptions{
 				State:       "closed",
 				Sort:        "updated",
 				Direction:   "desc",
@@ -156,7 +172,7 @@ func runBumpVersion(changelogPath, versionPath string, bumpLevel string, preRele
 			if err != nil {
 				return nil, errors.Wrap(err, "Fail to list GitHub pull requests")
 			}
-			for _, pr := range ghPrs {
+			for _, pr := range prs {
 				if pr.GetBase().GetRef() != baseBranch {
 					continue
 				}
@@ -171,32 +187,7 @@ func runBumpVersion(changelogPath, versionPath string, bumpLevel string, preRele
 				if pr.GetMergeCommitSHA() == lastCommitSHA {
 					continue
 				}
-
-				var (
-					kinds []string
-					skip  bool
-				)
-				for _, lbl := range pr.Labels {
-					if lbl.GetName() == skipLabel {
-						skip = true
-					}
-					if strings.HasPrefix(lbl.GetName(), labelPrefix) {
-						kinds = append(kinds, strings.ToUpper(strings.TrimPrefix(lbl.GetName(), labelPrefix)))
-					}
-				}
-				p := pullRequest{
-					Kinds:  changelog.ParseKinds(kinds),
-					Title:  pr.GetTitle(),
-					Number: pr.GetNumber(),
-				}
-				if pr.GetUser() != nil {
-					uniqContributors[pr.GetUser().GetLogin()] = struct{}{}
-				}
-				if skip {
-					skipped = append(skipped, p)
-				} else {
-					prs = append(prs, p)
-				}
+				ghPrs = append(ghPrs, pr)
 			}
 			return resp, nil
 		},
@@ -205,9 +196,28 @@ func runBumpVersion(changelogPath, versionPath string, bumpLevel string, preRele
 		return err
 	}
 
-	var contributors []string
-	for k := range uniqContributors {
-		contributors = append(contributors, k)
+	// Extract information from pull requests.
+	var prs []pullRequest
+	for _, pr := range ghPrs {
+		var (
+			kinds       changelog.Kinds
+			contributor string
+		)
+		for _, lbl := range pr.Labels {
+			s := strings.TrimPrefix(strings.ToLower(lbl.GetName()), "kind/")
+			if k, err := changelog.FromString(s); err == nil {
+				kinds = append(kinds, k)
+			}
+		}
+		if pr.GetUser() != nil {
+			contributor = pr.GetUser().GetLogin()
+		}
+		prs = append(prs, pullRequest{
+			Kinds:       kinds,
+			Number:      pr.GetNumber(),
+			Title:       pr.GetTitle(),
+			Contributor: contributor,
+		})
 	}
 
 	// Update the changelog file.
@@ -220,7 +230,7 @@ func runBumpVersion(changelogPath, versionPath string, bumpLevel string, preRele
 		return err
 	}
 	defer f.Close()
-	err = writeChangelog(f, next.String(), prs, skipped, contributors)
+	err = writeChangelog(f, next.String(), prs)
 	if err != nil {
 		return err
 	}

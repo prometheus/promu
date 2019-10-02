@@ -36,6 +36,22 @@ const (
 	kindBugfix
 )
 
+// FromString turns a string into a Kind.
+func FromString(s string) (Kind, error) {
+	s = strings.ToUpper(s)
+	switch {
+	case strings.Contains(s, "CHANGE"):
+		return kindChange, nil
+	case strings.Contains(s, "FEATURE"):
+		return kindFeature, nil
+	case strings.Contains(s, "ENHANCEMENT"):
+		return kindEnhancement, nil
+	case strings.Contains(s, "BUGFIX") || strings.Contains(s, "BUG"):
+		return kindBugfix, nil
+	}
+	return 0, errors.New("Not found")
+}
+
 func (k Kind) String() string {
 	switch k {
 	case kindChange:
