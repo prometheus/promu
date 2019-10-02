@@ -38,11 +38,6 @@ func RunCommand(name string, arg ...string) error {
 	return cmd.Run()
 }
 
-// Quote quotes a shell command parameter.
-func Quote(arg string) string {
-	return fmt.Sprintf("'%s'", strings.Replace(arg, "'", "'\\''", -1))
-}
-
 // SplitParameters splits shell command parameters, taking quoting in account.
 func SplitParameters(s string) []string {
 	r := regexp.MustCompile(`'[^']*'|[^ ]+`)
