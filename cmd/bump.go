@@ -38,6 +38,7 @@ var (
 	bumpLevel      = bumpcmd.Flag("level", "Level of version to increment (should be one of major, minor, patch, pre)").Default("minor").Enum("major", "minor", "patch", "pre")
 	bumpPreRelease = bumpcmd.Flag("pre-release", "Pre-release identifier").Default("rc.0").String()
 	bumpBaseBranch = bumpcmd.Flag("base-branch", "Pre-release identifier").Default("master").String()
+	bumpDryRun     = bumpcmd.Flag("dry-run", "Do not modify the files").Bool()
 )
 
 type pullRequest struct {
@@ -118,7 +119,7 @@ func writeChangelog(w io.Writer, version string, prs []pullRequest) error {
 	})
 }
 
-func runBumpVersion(changelogPath, versionPath string, bumpLevel string, preRelease string, baseBranch string) error {
+func runBumpVersion(changelogPath, versionPath string, bumpLevel string, preRelease string, baseBranch string, dryRun bool) error {
 	current, err := projInfo.ToSemver()
 	if err != nil {
 		return err
@@ -218,6 +219,10 @@ func runBumpVersion(changelogPath, versionPath string, bumpLevel string, preRele
 			Title:       pr.GetTitle(),
 			Contributor: contributor,
 		})
+	}
+
+	if dryRun {
+		return writeChangelog(os.Stdout, next.String(), prs)
 	}
 
 	// Update the changelog file.

@@ -126,7 +126,7 @@ func Execute() {
 	case checkLicensescmd.FullCommand():
 		runCheckLicenses(optArg(*checkLicLocation, 0, "."), *headerLength, *sourceExtensions)
 	case bumpcmd.FullCommand():
-		err = runBumpVersion("CHANGELOG.md", "VERSION", *bumpLevel, *bumpPreRelease, *bumpBaseBranch)
+		err = runBumpVersion("CHANGELOG.md", "VERSION", *bumpLevel, *bumpPreRelease, *bumpBaseBranch, *bumpDryRun)
 		if err != nil {
 			fatal(err)
 		}
