@@ -30,7 +30,8 @@ import (
 type Kind int
 
 const (
-	kindChange = iota
+	kindSecurity = iota
+	kindChange
 	kindFeature
 	kindEnhancement
 	kindBugfix
@@ -40,6 +41,8 @@ const (
 func FromString(s string) (Kind, error) {
 	s = strings.ToUpper(s)
 	switch {
+	case strings.Contains(s, "SECURITY"):
+		return kindSecurity, nil
 	case strings.Contains(s, "CHANGE"):
 		return kindChange, nil
 	case strings.Contains(s, "FEATURE"):
@@ -54,6 +57,8 @@ func FromString(s string) (Kind, error) {
 
 func (k Kind) String() string {
 	switch k {
+	case kindSecurity:
+		return "SECURITY"
 	case kindChange:
 		return "CHANGE"
 	case kindFeature:
@@ -74,6 +79,8 @@ func ParseKinds(s []string) Kinds {
 	m := make(map[Kind]struct{})
 	for _, k := range s {
 		switch k {
+		case "SECURITY":
+			m[kindSecurity] = struct{}{}
 		case "CHANGE":
 			m[kindChange] = struct{}{}
 		case "FEATURE":
