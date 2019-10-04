@@ -37,7 +37,7 @@ var (
 
 	bumpLevel      = bumpcmd.Flag("level", "Level of version to increment (should be one of major, minor, patch, pre)").Default("minor").Enum("major", "minor", "patch", "pre")
 	bumpPreRelease = bumpcmd.Flag("pre-release", "Pre-release identifier").Default("rc.0").String()
-	bumpBaseBranch = bumpcmd.Flag("base-branch", "Pre-release identifier").Default("master").String()
+	bumpBaseBranch = bumpcmd.Flag("base-branch", "Base branch").Default("master").String()
 	bumpDryRun     = bumpcmd.Flag("dry-run", "Do not modify the files").Bool()
 )
 
@@ -148,7 +148,7 @@ func runBumpVersion(changelogPath, versionPath string, bumpLevel string, preRele
 	client, err := githubUtil.NewClient(ctx)
 	if err != nil {
 		info(fmt.Sprintf("failed to create authenticated GitHub client: %v", err))
-		info("Fallback to client without unauthentication")
+		info("fallback to GitHub client without unauthentication")
 		client = github.NewClient(nil)
 	}
 
@@ -174,13 +174,13 @@ func runBumpVersion(changelogPath, versionPath string, bumpLevel string, preRele
 				return nil, errors.Wrap(err, "Fail to list GitHub pull requests")
 			}
 			for _, pr := range prs {
-				if pr.GetBase().GetRef() != baseBranch {
-					continue
-				}
 				if pr.GetUpdatedAt().Before(lastTagTime) {
 					// We've reached pull requests that haven't changed since
 					// the reference tag so we can stop now.
 					return nil, nil
+				}
+				if pr.GetBase().GetRef() != baseBranch {
+					continue
 				}
 				if pr.GetMergedAt().IsZero() || pr.GetMergedAt().Before(lastTagTime) {
 					continue
