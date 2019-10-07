@@ -39,10 +39,16 @@ type Info struct {
 	Version  string
 }
 
-// shellOutput executes a shell command and returns the trimmed output
+// shellOutput executes a shell command and returns the trimmed output.
 func shellOutput(cmd string, arg ...string) string {
-	out, _ := exec.Command(cmd, arg...).Output()
-	return strings.Trim(string(out), " \n\r")
+	out, _ := shellOutputWithError(cmd, arg...)
+	return out
+}
+
+// shellOutputWithError executes a shell command and returns the trimmed output and error.
+func shellOutputWithError(cmd string, arg ...string) (string, error) {
+	out, err := exec.Command(cmd, arg...).Output()
+	return strings.Trim(string(out), " \n\r"), err
 }
 
 // NewInfo returns a new Info.
@@ -59,6 +65,7 @@ func NewInfo(warnf func(error)) (Info, error) {
 	cmd := exec.Command("git", "rev-parse", "--show-toplevel")
 	cmd.Stdout, cmd.Stderr = nil, nil
 	if err := cmd.Run(); err != nil {
+		// Not a git repository.
 		repo, err := os.Getwd()
 		if err != nil {
 			return info, errors.Wrap(err, "couldn't get current working directory")
@@ -79,17 +86,27 @@ func NewInfo(warnf func(error)) (Info, error) {
 			Revision: "non-git",
 		}
 	} else {
-		cmd := exec.Command("git", "config", "--get", "remote.origin.url")
-		repoURL, err := cmd.Output()
+		branch, err := shellOutputWithError("git", "rev-parse", "--abbrev-ref", "HEAD")
 		if err != nil {
-			warnf(errors.Wrap(err, "unable to get repo location info from 'origin' remote"))
+			return info, errors.Wrap(err, "unable to get the current branch")
 		}
-		repo, err := repoLocation(strings.Trim(string(repoURL), " \n\r"))
+
+		remote, err := shellOutputWithError("git", "config", "--get", fmt.Sprintf("branch.%s.remote", branch))
 		if err != nil {
-			return info, errors.Wrap(err, "couldn't parse repo location")
+			// default to origin.
+			remote = "origin"
+		}
+
+		repoURL, err := shellOutputWithError("git", "config", "--get", fmt.Sprintf("remote.%s.url", remote))
+		if err != nil {
+			warnf(errors.Wrapf(err, "unable to get repository location for remote %q", remote))
+		}
+		repo, err := repoLocation(repoURL)
+		if err != nil {
+			return info, errors.Wrapf(err, "couldn't parse repository location: %q", repoURL)
 		}
 		info = Info{
-			Branch:   shellOutput("git", "rev-parse", "--abbrev-ref", "HEAD"),
+			Branch:   branch,
 			Name:     filepath.Base(repo),
 			Owner:    filepath.Base(filepath.Dir(repo)),
 			Repo:     repo,
