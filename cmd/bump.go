@@ -252,7 +252,7 @@ func runBumpVersion(changelogPath, versionPath string, bumpLevel string, preRele
 		}
 		defer f.Close()
 
-		_, err = f.WriteString(next.String())
+		_, err = f.WriteString(next.String() + "\n")
 		if err != nil {
 			return err
 		}
