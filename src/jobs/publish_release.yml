@@ -1,8 +1,14 @@
 description: >
   Build and publish binaries and container images for a given release tag.
 
+parameters:
+  image:
+    type: string
+    description: Custom container image.
+    default: circleci/golang
+
 docker:
-- image: circleci/golang
+- image: << parameters.image >>
 
 steps:
 - setup_build_environment

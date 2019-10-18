@@ -1,8 +1,14 @@
 description: >
   Build and publish container images from the master branch.
 
+parameters:
+  image:
+    type: string
+    description: Custom container image.
+    default: circleci/golang
+
 docker:
-- image: circleci/golang
+- image: << parameters.image >>
 
 steps:
 - setup_build_environment
