@@ -61,7 +61,8 @@ type changelogData struct {
 	Contributors []string
 }
 
-const changelogTmpl = `## {{ .Version }} / {{ .Date }}
+const (
+	changelogTmpl = `## {{ .Version }} / {{ .Date }}
 {{ range .PullRequests }}
 * [{{ .Kinds.String }}] {{ makeSentence .Title }} #{{ .Number }}
 {{- end }}
@@ -75,6 +76,8 @@ Contributors:
 {{- end }}
 
 `
+	prombotUser = "prombot"
+)
 
 func writeChangelog(w io.Writer, version string, prs []pullRequest) error {
 	var (
@@ -93,6 +96,9 @@ func writeChangelog(w io.Writer, version string, prs []pullRequest) error {
 			continue
 		}
 		uniqContributors[pr.Contributor] = struct{}{}
+		if pr.Contributor == prombotUser {
+			continue
+		}
 		contributors = append(contributors, pr.Contributor)
 	}
 	sort.SliceStable(visible, func(i int, j int) bool { return visible[i].Kinds.Before(visible[j].Kinds) })
