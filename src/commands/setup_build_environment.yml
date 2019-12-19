@@ -5,6 +5,6 @@ steps:
 - setup_environment
 - setup_remote_docker:
     version: 18.06.0-ce
-- run: docker run --privileged linuxkit/binfmt:v0.6
+- run: docker run --privileged linuxkit/binfmt:v0.7
 - attach_workspace:
     at: .
