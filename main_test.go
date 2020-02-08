@@ -24,6 +24,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/prometheus/promu/cmd"
 )
 
 const (
@@ -55,7 +57,7 @@ func setup() {
 	if !os.IsExist(err) && err != nil {
 		log.Fatal(err)
 	}
-	cmd := exec.Command("go", "build", "-o", promuBinaryAbsPath)
+	cmd := exec.Command(cmd.GoBin(), "build", "-o", promuBinaryAbsPath)
 	output, err := cmd.Output()
 	if err != nil {
 		log.Fatal(err, string(output))
