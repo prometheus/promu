@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -148,6 +149,8 @@ func runCrossbuild() {
 		warn(errors.Errorf("unknown/unhandled platforms: %s", unknownPlatforms))
 	}
 
+	var pgroups []platformGroup
+
 	if !cgo {
 		// In non-CGO, use the base image without any crossbuild toolchain
 		var allPlatforms []string
@@ -157,34 +160,62 @@ func runCrossbuild() {
 		allPlatforms = append(allPlatforms, mipsPlatforms[:]...)
 		allPlatforms = append(allPlatforms, s390xPlatforms[:]...)
 
-		pg := &platformGroup{"base", dockerBaseBuilderImage, allPlatforms}
-		if err := pg.Build(repoPath); err != nil {
-			fatal(errors.Wrapf(err, "The %s builder docker image exited unexpectedly", pg.Name))
+		for _, platform := range allPlatforms {
+			pgroups = append(pgroups, platformGroup{"base", dockerBaseBuilderImage, platform})
 		}
 	} else {
-		for _, pg := range []platformGroup{
-			{"main", dockerMainBuilderImage, mainPlatforms},
-			{"ARM", dockerARMBuilderImage, armPlatforms},
-			{"PowerPC", dockerPowerPCBuilderImage, powerPCPlatforms},
-			{"MIPS", dockerMIPSBuilderImage, mipsPlatforms},
-			{"s390x", dockerS390XBuilderImage, s390xPlatforms},
-		} {
-			if err := pg.Build(repoPath); err != nil {
-				fatal(errors.Wrapf(err, "The %s builder docker image exited unexpectedly", pg.Name))
-			}
+		for _, platform := range mainPlatforms {
+			pgroups = append(pgroups, platformGroup{"main", dockerMainBuilderImage, platform})
 		}
+		for _, platform := range armPlatforms {
+			pgroups = append(pgroups, platformGroup{"ARM", dockerARMBuilderImage, platform})
+		}
+		for _, platform := range powerPCPlatforms {
+			pgroups = append(pgroups, platformGroup{"PowerPC", dockerPowerPCBuilderImage, platform})
+		}
+		for _, platform := range mipsPlatforms {
+			pgroups = append(pgroups, platformGroup{"MIPS", dockerMIPSBuilderImage, platform})
+		}
+		for _, platform := range s390xPlatforms {
+			pgroups = append(pgroups, platformGroup{"s390x", dockerS390XBuilderImage, platform})
+		}
+	}
+
+	// Create a chan that can hold NumCPU() struct{}
+	// This will prevent us to launch more concurrent builds
+	// than the number of CPU
+	sem := make(chan struct{}, runtime.NumCPU())
+	errs := make([]error, 0, len(platforms))
+
+	// Launching builds concurrently
+	for _, pg := range pgroups {
+		sem <- struct{}{}
+
+		go func(pg platformGroup) {
+			if err := pg.Build(repoPath); err != nil {
+				errs = append(errs, errors.Wrapf(err, "The %s/%s builder docker image exited unexpectedly", pg.Name, pg.Platform))
+			}
+			<-sem
+		}(pg)
+	}
+
+	if len(errs) > 0 {
+		for _, err := range errs {
+			printErr(err)
+		}
+
+		fatal(errors.New("Crossbuild failed"))
 	}
 }
 
 type platformGroup struct {
 	Name        string
 	DockerImage string
-	Platforms   []string
+	Platform    string
 }
 
 func (pg platformGroup) Build(repoPath string) error {
-	platformsParam := strings.Join(pg.Platforms[:], " ")
-	if len(platformsParam) == 0 {
+	if len(pg.Platform) == 0 {
 		return nil
 	}
 
@@ -200,7 +231,7 @@ func (pg platformGroup) Build(repoPath string) error {
 		"--name", ctrName,
 		pg.DockerImage,
 		"-i", repoPath,
-		"-p", platformsParam)
+		"-p", pg.Platform)
 	if err != nil {
 		return err
 	}
