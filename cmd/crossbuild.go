@@ -17,6 +17,7 @@ package cmd
 import (
 	"fmt"
 	"log"
+	"math"
 	"os"
 	"runtime"
 	"strconv"
@@ -187,10 +188,11 @@ func runCrossbuild() {
 		}
 	}
 
-	// Create a chan that can hold NumCPU() struct{}
+	// Create a chan that can hold NumCPU()-1 struct{}
 	// This will prevent us to launch more concurrent builds
 	// than the number of CPU
-	sem := make(chan struct{}, runtime.NumCPU())
+
+	sem := make(chan struct{}, math.Min(1, runtime.NumCPU()-1))
 	errs := make([]error, 0, len(platforms))
 
 	// Launching builds concurrently
@@ -199,7 +201,7 @@ func runCrossbuild() {
 
 		go func(pg platformGroup) {
 			if err := pg.Build(repoPath); err != nil {
-				errs = append(errs, errors.Wrapf(err, "The %s/%s builder docker image exited unexpectedly", pg.Name, pg.Platform))
+				errs = append(errs, errors.Wrapf(err, "The %s builder docker image exited unexpectedly", pg.Name))
 			}
 			<-sem
 		}(pg)
@@ -233,11 +235,15 @@ func (pg platformGroup) Build(repoPath string) error {
 	}
 
 	ctrName := "promu-crossbuild-" + pg.Name + "-" + strconv.FormatInt(time.Now().Unix(), 10)
-	err = sh.RunCommand("docker", "create", "-t",
+	err = sh.RunCommand(
+		"docker", "create", "-t",
 		"--name", ctrName,
+		"-v", firstGoPath()+"/pkg/:/go/pkg/",
 		pg.DockerImage,
 		"-i", repoPath,
-		"-p", pg.Platform)
+		"-p", pg.Platform,
+	)
+
 	if err != nil {
 		return err
 	}
@@ -261,4 +267,14 @@ func (pg platformGroup) Build(repoPath string) error {
 		return err
 	}
 	return sh.RunCommand("docker", "rm", "-f", ctrName)
+}
+
+func firstGoPath() string {
+	gopath := os.Getenv("GOPATH")
+
+	if strings.Contains(gopath, ":") {
+		return gopath[0:strings.Index(gopath, ":")]
+	}
+
+	return gopath
 }
