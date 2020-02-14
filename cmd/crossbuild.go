@@ -19,6 +19,7 @@ import (
 	"log"
 	"math"
 	"os"
+	"os/exec"
 	"runtime"
 	"strconv"
 	"strings"
@@ -165,51 +166,90 @@ func runCrossbuild() {
 			name := "base-" + strings.ReplaceAll(platform, "/", "-")
 			pgroups = append(pgroups, platformGroup{name, dockerBaseBuilderImage, platform})
 		}
+
+		// Pull build image
+		err := dockerPull(dockerBaseBuilderImage)
+		if err != nil {
+			fatal(err)
+		}
 	} else {
-		for _, platform := range mainPlatforms {
-			name := "base-" + strings.ReplaceAll(platform, "/", "-")
-			pgroups = append(pgroups, platformGroup{name, dockerMainBuilderImage, platform})
+		if len(mainPlatforms) > 0 {
+			for _, platform := range mainPlatforms {
+				name := "base-" + strings.ReplaceAll(platform, "/", "-")
+				pgroups = append(pgroups, platformGroup{name, dockerMainBuilderImage, platform})
+			}
+
+			err := dockerPull(dockerMainBuilderImage)
+			if err != nil {
+				fatal(err)
+			}
 		}
-		for _, platform := range armPlatforms {
-			name := "arm-" + strings.ReplaceAll(platform, "/", "-")
-			pgroups = append(pgroups, platformGroup{name, dockerARMBuilderImage, platform})
+
+		if len(armPlatforms) > 0 {
+			for _, platform := range armPlatforms {
+				name := "arm-" + strings.ReplaceAll(platform, "/", "-")
+				pgroups = append(pgroups, platformGroup{name, dockerARMBuilderImage, platform})
+			}
+
+			err := dockerPull(dockerARMBuilderImage)
+			if err != nil {
+				fatal(err)
+			}
 		}
-		for _, platform := range powerPCPlatforms {
-			name := "powerpc-" + strings.ReplaceAll(platform, "/", "-")
-			pgroups = append(pgroups, platformGroup{name, dockerPowerPCBuilderImage, platform})
+
+		if len(powerPCPlatforms) > 0 {
+			for _, platform := range powerPCPlatforms {
+				name := "powerpc-" + strings.ReplaceAll(platform, "/", "-")
+				pgroups = append(pgroups, platformGroup{name, dockerPowerPCBuilderImage, platform})
+			}
+
+			err := dockerPull(dockerPowerPCBuilderImage)
+			if err != nil {
+				fatal(err)
+			}
 		}
-		for _, platform := range mipsPlatforms {
-			name := "mips-" + strings.ReplaceAll(platform, "/", "-")
-			pgroups = append(pgroups, platformGroup{name, dockerMIPSBuilderImage, platform})
+
+		if len(mipsPlatforms) > 0 {
+			for _, platform := range mipsPlatforms {
+				name := "mips-" + strings.ReplaceAll(platform, "/", "-")
+				pgroups = append(pgroups, platformGroup{name, dockerMIPSBuilderImage, platform})
+			}
+
+			err := dockerPull(dockerMIPSBuilderImage)
+			if err != nil {
+				fatal(err)
+			}
 		}
-		for _, platform := range s390xPlatforms {
-			name := "s390x-" + strings.ReplaceAll(platform, "/", "-")
-			pgroups = append(pgroups, platformGroup{name, dockerS390XBuilderImage, platform})
+
+		if len(s390xPlatforms) > 0 {
+			for _, platform := range s390xPlatforms {
+				name := "s390x-" + strings.ReplaceAll(platform, "/", "-")
+				pgroups = append(pgroups, platformGroup{name, dockerS390XBuilderImage, platform})
+			}
+
+			err := dockerPull(dockerS390XBuilderImage)
+			if err != nil {
+				fatal(err)
+			}
 		}
 	}
 
 	var buildNum int
 
 	// Use GOMAXPROCS for concurrent build number is present
-	if len(os.Getenv("GOMAXPROCS")) {
+	if len(os.Getenv("GOMAXPROCS")) > 0 {
 		buildNum, _ = strconv.Atoi(os.Getenv("GOMAXPROCS"))
 	}
 
 	// Use number of CPU - 1 as concurrent build number
 	if buildNum == 0 {
-		buildNum := int(math.Max(1, float64(runtime.NumCPU())-1))
+		buildNum = int(math.Max(1, float64(runtime.NumCPU())-1))
 	}
 
 	sem := make(chan struct{}, buildNum)
 	errs := make([]error, 0, len(platforms))
 
 	fmt.Printf("> building %d concurrent crossbuilds\n", buildNum)
-
-	// Pull build image first
-	err = sh.RunCommand("docker", "pull", dockerBuilderImageName+":"+goVersion)
-	if err != nil {
-		fatal(err)
-	}
 
 	// Launching builds concurrently
 	for _, pg := range pgroups {
@@ -245,6 +285,13 @@ type platformGroup struct {
 	Name        string
 	DockerImage string
 	Platform    string
+}
+
+func dockerPull(image string) error {
+	pull := exec.Command("docker", "pull", image)
+	err := pull.Run()
+
+	return err
 }
 
 func (pg platformGroup) Build(repoPath string) error {
