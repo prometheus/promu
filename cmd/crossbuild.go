@@ -210,6 +210,14 @@ func runCrossbuild() {
 		}(pg)
 	}
 
+	for {
+		if len(sem) == 0 {
+			break
+		}
+
+		time.Sleep(2 * time.Second)
+	}
+
 	if len(errs) > 0 {
 		for _, err := range errs {
 			printErr(err)
@@ -238,10 +246,7 @@ func (pg platformGroup) Build(repoPath string) error {
 	}
 
 	ctrName := "promu-crossbuild-" + pg.Name + "-" + strconv.FormatInt(time.Now().Unix(), 10)
-	args := []string{
-		"create", "-t",
-		"--name", ctrName,
-	}
+	args := []string{"create", "-t", "--name", ctrName}
 
 	// If we build with a local docker we mount /go/pkg/ to share go mod cache
 	if len(os.Getenv("DOCKER_HOST")) == 0 {
