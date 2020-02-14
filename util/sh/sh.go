@@ -29,7 +29,7 @@ var Verbose bool
 func RunCommand(name string, arg ...string) error {
 	if Verbose {
 		cmdText := name + " " + strings.Join(arg, " ")
-		fmt.Fprintln(os.Stderr, " + ", cmdText)
+		fmt.Fprintln(os.Stderr, "+ ", cmdText)
 	}
 	cmd := exec.Command(name, arg...)
 	cmd.Stdout = os.Stdout
