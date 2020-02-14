@@ -191,9 +191,11 @@ func runCrossbuild() {
 	// Create a chan that can hold NumCPU()-1 struct{}
 	// This will prevent us to launch more concurrent builds
 	// than the number of CPU
-
-	sem := make(chan struct{}, math.Min(1, runtime.NumCPU()-1))
+	cpus := int(math.Max(1, float64(runtime.NumCPU())-1))
+	sem := make(chan struct{}, cpus)
 	errs := make([]error, 0, len(platforms))
+
+	fmt.Printf("> building %d concurrent crossbuilds\n", cpus)
 
 	// Launching builds concurrently
 	for _, pg := range pgroups {
