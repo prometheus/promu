@@ -70,11 +70,12 @@ const (
 * [{{ .Kinds.String }}] {{ makeSentence .Title }} #{{ .Number }}
 {{- end }} -->
 
+<!--
 Contributors:
 {{ range .Contributors }}
 * @{{ . }}
 {{- end }}
-
+-->
 `
 	prombotUser = "prombot"
 )
