@@ -31,7 +31,7 @@ jobs:
     - checkout
     - run: env
     - run: wget https://dl.google.com/go/go1.13.8.src.tar.gz
-    - run: rm -rf /usr/local/go && tar -C /usr/local -xzf go1.13.8.src.tar.gz
+    - run: sudo rm -rf /usr/local/go && sudo tar -C /usr/local -xzf go1.13.8.src.tar.gz
     - run: make promu
     - run: make build
     - run: CROSSBUILDN=1 promu crossbuild -v
