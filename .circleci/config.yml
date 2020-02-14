@@ -29,7 +29,7 @@ jobs:
     steps:
     - setup_remote_docker
     - checkout
-    - run: make promu
+    - run: make build
     - restore_cache:
         key: v1-promu-config-{{ checksum ".promu.yml" }}
     - run: promu crossbuild -v --gocache-path /home/circleci/.cache/go-build
