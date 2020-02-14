@@ -197,9 +197,14 @@ func runCrossbuild() {
 
 	fmt.Printf("> building %d concurrent crossbuilds\n", cpus)
 
+	// Pull build image first
+	err = sh.RunCommand("docker", "pull", dockerBuilderImageName+":"+goVersion)
+	if err != nil {
+		fatal(err)
+	}
+
 	// Launching builds concurrently
 	for _, pg := range pgroups {
-		fmt.Printf("> %s\n", pg.Name)
 		sem <- struct{}{}
 
 		go func(pg platformGroup) {
@@ -210,6 +215,7 @@ func runCrossbuild() {
 		}(pg)
 	}
 
+	// Wait for builds to finish
 	for {
 		if len(sem) == 0 {
 			break
