@@ -33,7 +33,7 @@ jobs:
     - run: sudo rm -rf /usr/local/go
     - run: wget https://dl.google.com/go/go1.13.8.src.tar.gz
     - run: sudo tar -C /usr/local -xzf go1.13.8.src.tar.gz
-    - run: ls -la /usr/local
+    - run: ls -la /usr/local/go
     - run: make promu
     - run: make build
     - run: CROSSBUILDN=1 promu crossbuild -v
