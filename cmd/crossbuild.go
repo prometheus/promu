@@ -199,6 +199,7 @@ func runCrossbuild() {
 
 	// Launching builds concurrently
 	for _, pg := range pgroups {
+		fmt.Printf("> %s\n", pg.Name)
 		sem <- struct{}{}
 
 		go func(pg platformGroup) {
@@ -238,7 +239,7 @@ func (pg platformGroup) Build(repoPath string) error {
 
 	ctrName := "promu-crossbuild-" + pg.Name + "-" + strconv.FormatInt(time.Now().Unix(), 10)
 	args := []string{
-		"docker", "create", "-t",
+		"create", "-t",
 		"--name", ctrName,
 	}
 
@@ -249,15 +250,12 @@ func (pg platformGroup) Build(repoPath string) error {
 
 	args = append(args, pg.DockerImage, "-i", repoPath, "-p", pg.Platform)
 
-	err = sh.RunCommand(args...)
-
+	err = sh.RunCommand("docker", args...)
 	if err != nil {
 		return err
 	}
 
-	err = sh.RunCommand("docker", "cp",
-		cwd+"/.",
-		ctrName+":/app/")
+	err = sh.RunCommand("docker", "cp", cwd+"/.", ctrName+":/app/")
 	if err != nil {
 		return err
 	}
@@ -267,12 +265,11 @@ func (pg platformGroup) Build(repoPath string) error {
 		return err
 	}
 
-	err = sh.RunCommand("docker", "cp", "-a",
-		ctrName+":/app/.build/.",
-		cwd+"/.build")
+	err = sh.RunCommand("docker", "cp", "-a", ctrName+":/app/.build/.", cwd+"/.build")
 	if err != nil {
 		return err
 	}
+
 	return sh.RunCommand("docker", "rm", "-f", ctrName)
 }
 
