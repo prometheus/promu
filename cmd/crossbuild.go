@@ -161,23 +161,29 @@ func runCrossbuild() {
 		allPlatforms = append(allPlatforms, s390xPlatforms[:]...)
 
 		for _, platform := range allPlatforms {
-			pgroups = append(pgroups, platformGroup{"base", dockerBaseBuilderImage, platform})
+			name := "base-" + strings.ReplaceAll(platform, "/", "-")
+			pgroups = append(pgroups, platformGroup{name, dockerBaseBuilderImage, platform})
 		}
 	} else {
 		for _, platform := range mainPlatforms {
-			pgroups = append(pgroups, platformGroup{"main", dockerMainBuilderImage, platform})
+			name := "base-" + strings.ReplaceAll(platform, "/", "-")
+			pgroups = append(pgroups, platformGroup{name, dockerMainBuilderImage, platform})
 		}
 		for _, platform := range armPlatforms {
-			pgroups = append(pgroups, platformGroup{"ARM", dockerARMBuilderImage, platform})
+			name := "arm-" + strings.ReplaceAll(platform, "/", "-")
+			pgroups = append(pgroups, platformGroup{name, dockerARMBuilderImage, platform})
 		}
 		for _, platform := range powerPCPlatforms {
-			pgroups = append(pgroups, platformGroup{"PowerPC", dockerPowerPCBuilderImage, platform})
+			name := "powerpc-" + strings.ReplaceAll(platform, "/", "-")
+			pgroups = append(pgroups, platformGroup{name, dockerPowerPCBuilderImage, platform})
 		}
 		for _, platform := range mipsPlatforms {
-			pgroups = append(pgroups, platformGroup{"MIPS", dockerMIPSBuilderImage, platform})
+			name := "mips-" + strings.ReplaceAll(platform, "/", "-")
+			pgroups = append(pgroups, platformGroup{name, dockerMIPSBuilderImage, platform})
 		}
 		for _, platform := range s390xPlatforms {
-			pgroups = append(pgroups, platformGroup{"s390x", dockerS390XBuilderImage, platform})
+			name := "s390x-" + strings.ReplaceAll(platform, "/", "-")
+			pgroups = append(pgroups, platformGroup{name, dockerS390XBuilderImage, platform})
 		}
 	}
 
@@ -226,7 +232,7 @@ func (pg platformGroup) Build(repoPath string) error {
 		return errors.Wrapf(err, "couldn't get current working directory")
 	}
 
-	ctrName := "promu-crossbuild-" + pg.Name + strconv.FormatInt(time.Now().Unix(), 10)
+	ctrName := "promu-crossbuild-" + pg.Name + "-" + strconv.FormatInt(time.Now().Unix(), 10)
 	err = sh.RunCommand("docker", "create", "-t",
 		"--name", ctrName,
 		pg.DockerImage,
