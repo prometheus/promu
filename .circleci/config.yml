@@ -1,9 +1,6 @@
 ---
 version: 2.1
 
-orbs:
-  go: circleci/go@0.2.0
-
 executors:
   # Whenever the Go version is updated here, .promu.yml should also be updated.
   golang:
@@ -26,13 +23,12 @@ jobs:
     - run: git diff --exit-code
 
   build:
-    machine: true
+    machine:
+      image: ubuntu-1604:201903-01
     working_directory: /home/circleci/.go_workspace/src/github.com/prometheus/promu
 
     steps:
     - checkout
-    - go/install:
-        version: 1.13.8
     - run: make build
     - restore_cache:
         keys:
