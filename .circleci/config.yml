@@ -31,10 +31,14 @@ jobs:
     - checkout
     - run: make build
     - restore_cache:
-        key: v1-promu-config-{{ checksum ".promu.yml" }}
+        keys:
+        - v0-gocache-{{ checksum "go.mod" }}
+        - v0-gocache-
+    - run: mkdir -p /home/circleci/.cache/go-build
     - run: promu crossbuild -v --gocache-path /home/circleci/.cache/go-build
+    - run: du -sh /home/circleci/.cache/go-build
     - save_cache:
-        key: v1-promu-config-{{ checksum ".promu.yml" }}
+        key: v0-gocache-{{ checksum "go.mod" }}
         paths:
         - /home/circleci/.cache/go-build
     - persist_to_workspace:
