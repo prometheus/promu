@@ -26,11 +26,13 @@ jobs:
     machine:
       image: ubuntu-1604:201903-01
     working_directory: /home/circleci/.go_workspace/src/github.com/prometheus/promu
+    environment:
+      PATH: /usr/local/go/bin:$PATH
 
     steps:
     - checkout
     - run: wget https://dl.google.com/go/go1.13.8.src.tar.gz
-    - run: tar -C /usr/local -xzf go1.13.8.src.tar.gz
+    - run: rm -rf /usr/local/go && tar -C /usr/local -xzf go1.13.8.src.tar.gz
     - run: make promu
     - run: make build
     - run: CROSSBUILDN=1 promu crossbuild -v
