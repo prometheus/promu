@@ -5,7 +5,7 @@ go:
 repository:
     path: github.com/prometheus/promu
 build:
-    flags: -mod=vendor -a -tags 'netgo static_build'
+    flags: -mod=vendor -tags 'netgo static_build'
     ldflags: |
         -s
         -X github.com/prometheus/common/version.Version={{.Version}}
@@ -17,4 +17,3 @@ tarball:
     files:
         - LICENSE
         - NOTICE
-

@@ -30,7 +30,13 @@ jobs:
     - setup_remote_docker
     - checkout
     - run: make promu
-    - run: promu crossbuild -v
+    - restore_cache:
+        key: v1-promu-config-{{ checksum ".promu.yml" }}
+    - run: promu crossbuild -v --gocache-path /home/circleci/.cache/go-build
+    - save_cache:
+        key: v1-promu-config-{{ checksum ".promu.yml" }}
+        paths:
+        - /home/circleci/.cache/go-build
     - persist_to_workspace:
         root: .
         paths:
