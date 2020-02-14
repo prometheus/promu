@@ -237,14 +237,19 @@ func (pg platformGroup) Build(repoPath string) error {
 	}
 
 	ctrName := "promu-crossbuild-" + pg.Name + "-" + strconv.FormatInt(time.Now().Unix(), 10)
-	err = sh.RunCommand(
+	args := []string{
 		"docker", "create", "-t",
 		"--name", ctrName,
-		"-v", firstGoPath()+"/pkg/:/go/pkg/",
-		pg.DockerImage,
-		"-i", repoPath,
-		"-p", pg.Platform,
-	)
+	}
+
+	// If we build with a local docker we mount /go/pkg/ to share go mod cache
+	if len(os.Getenv("DOCKER_HOST")) == 0 {
+		args = append(args, "-v", firstGoPath()+"/pkg/:/go/pkg/")
+	}
+
+	args = append(args, pg.DockerImage, "-i", repoPath, "-p", pg.Platform)
+
+	err = sh.RunCommand(args...)
 
 	if err != nil {
 		return err

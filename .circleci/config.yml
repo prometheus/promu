@@ -31,7 +31,7 @@ jobs:
     - checkout
     - run: make promu
     - run: make build
-    - run: GOMAXPROCS=4 promu crossbuild -v
+    - run: promu crossbuild -v
     - persist_to_workspace:
         root: .
         paths:
