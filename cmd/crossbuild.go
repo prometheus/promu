@@ -81,7 +81,7 @@ var (
 	goCachePath = crossbuildcmd.Flag("gocache-path", "Path to a Go cache directory on the local machine").String()
 	// kingpin doesn't currently support using the crossbuild command and the
 	// crossbuild tarball subcommand at the same time, so we treat the
-	// tarball subcommand as an optional arg
+	// tarball subcommand as an optional arg.
 	tarballsSubcommand = crossbuildcmd.Arg("tarballs", "Optionally pass the string \"tarballs\" from cross-built binaries").String()
 )
 
@@ -150,7 +150,7 @@ func runCrossbuild() {
 	}
 
 	if !cgo {
-		// In non-CGO, use the base image without any crossbuild toolchain
+		// In non-CGO, use the base image without any crossbuild toolchain.
 		var allPlatforms []string
 		allPlatforms = append(allPlatforms, mainPlatforms[:]...)
 		allPlatforms = append(allPlatforms, armPlatforms[:]...)
@@ -183,6 +183,8 @@ type platformGroup struct {
 	Platforms   []string
 }
 
+const containerGoCacheDir = "/root/.cache/go-build"
+
 func (pg platformGroup) Build(repoPath string, goCachePath string) error {
 	platformsParam := strings.Join(pg.Platforms[:], " ")
 	if len(platformsParam) == 0 {
@@ -203,8 +205,8 @@ func (pg platformGroup) Build(repoPath string, goCachePath string) error {
 	}
 	if goCachePath != "" {
 		args = append(args,
-			"--env", "GOCACHE=/root/.cache/go-build",
-			"-v", fmt.Sprintf("%s:/root/.cache/go-build", goCachePath),
+			"--env", fmt.Sprintf("GOCACHE=%s", containerGoCacheDir),
+			"-v", fmt.Sprintf("%s:%s", goCachePath, containerGoCacheDir),
 		)
 	}
 	args = append(args,
