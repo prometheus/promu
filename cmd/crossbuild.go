@@ -23,6 +23,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/pkg/errors"
@@ -85,6 +86,8 @@ var (
 	// crossbuild tarball subcommand at the same time, so we treat the
 	// tarball subcommand as an optional arg
 	tarballsSubcommand = crossbuildcmd.Arg("tarballs", "Optionally pass the string \"tarballs\" from cross-built binaries").String()
+
+	dockerCopyMutex sync.Mutex
 )
 
 func runCrossbuild() {
@@ -236,9 +239,9 @@ func runCrossbuild() {
 
 	var buildNum int
 
-	// Use GOMAXPROCS for concurrent build number is present
-	if len(os.Getenv("GOMAXPROCS")) > 0 {
-		buildNum, _ = strconv.Atoi(os.Getenv("GOMAXPROCS"))
+	// Use CROSSBUILDN for concurrent build number is present
+	if len(os.Getenv("CROSSBUILDN")) > 0 {
+		buildNum, _ = strconv.Atoi(os.Getenv("CROSSBUILDN"))
 	}
 
 	// Use number of CPU - 1 as concurrent build number
@@ -326,6 +329,7 @@ func (pg platformGroup) Build(repoPath string) error {
 		return err
 	}
 
+	// If we build using a remote docker then we cp our local go mod cache
 	if len(os.Getenv("DOCKER_HOST")) > 0 {
 		err = sh.RunCommand("docker", "cp", firstGoPath()+"/pkg/", ctrName+":/go/pkg/")
 		if err != nil {
@@ -338,7 +342,14 @@ func (pg platformGroup) Build(repoPath string) error {
 		return err
 	}
 
-	err = sh.RunCommand("docker", "cp", "-a", ctrName+":/app/.build/.", cwd+"/.build")
+	err = func() error {
+		// Avoid doing multiple copy at the same time
+		dockerCopyMutex.Lock()
+		defer dockerCopyMutex.Unlock()
+
+		return sh.RunCommand("docker", "cp", "-a", ctrName+":/app/.build/.", cwd+"/.build")
+	}()
+
 	if err != nil {
 		return err
 	}
