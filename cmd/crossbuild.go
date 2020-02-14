@@ -16,10 +16,12 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"math"
 	"os"
 	"os/exec"
+	"path"
 	"runtime"
 	"strconv"
 	"strings"
@@ -259,9 +261,12 @@ func runCrossbuild() {
 		sem <- struct{}{}
 
 		go func(pg platformGroup) {
+			start := time.Now()
 			if err := pg.Build(repoPath); err != nil {
 				errs = append(errs, errors.Wrapf(err, "The %s builder docker image exited unexpectedly", pg.Name))
 			}
+			duration := time.Since(start)
+			fmt.Printf("> build %s took %v\n", pg.Name, duration.Round(time.Millisecond))
 			<-sem
 		}(pg)
 	}
@@ -324,9 +329,39 @@ func (pg platformGroup) Build(repoPath string) error {
 		return err
 	}
 
-	err = sh.RunCommand("docker", "cp", cwd+"/.", ctrName+":/app/")
+	// Copy source one item at a time to discard the .build dir because docker cp
+	// does not honour .dockerignore
+	files, err := ioutil.ReadDir("./")
 	if err != nil {
 		return err
+	}
+
+	excludes := []string{
+		".build",
+	}
+
+FILES:
+	for _, file := range files {
+		for _, ex := range excludes {
+			if file.Name() == ex {
+				continue FILES
+			}
+		}
+
+		var src, dst string
+
+		if !file.IsDir() {
+			src = path.Join(cwd, file.Name())
+			dst = ctrName + ":" + path.Join("/app", file.Name())
+		} else {
+			src = path.Join(cwd, file.Name()) + "/"
+			dst = ctrName + ":" + path.Join("/app", file.Name()) + "/"
+		}
+
+		err = sh.RunCommand("docker", "cp", src, dst)
+		if err != nil {
+			return err
+		}
 	}
 
 	// If we build using a remote docker then we cp our local go mod cache
