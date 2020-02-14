@@ -188,14 +188,22 @@ func runCrossbuild() {
 		}
 	}
 
-	// Create a chan that can hold NumCPU()-1 struct{}
-	// This will prevent us to launch more concurrent builds
-	// than the number of CPU
-	cpus := int(math.Max(1, float64(runtime.NumCPU())-1))
-	sem := make(chan struct{}, cpus)
+	var buildNum int
+
+	// Use GOMAXPROCS for concurrent build number is present
+	if len(os.Getenv("GOMAXPROCS")) {
+		buildNum, _ = strconv.Atoi(os.Getenv("GOMAXPROCS"))
+	}
+
+	// Use number of CPU - 1 as concurrent build number
+	if buildNum == 0 {
+		buildNum := int(math.Max(1, float64(runtime.NumCPU())-1))
+	}
+
+	sem := make(chan struct{}, buildNum)
 	errs := make([]error, 0, len(platforms))
 
-	fmt.Printf("> building %d concurrent crossbuilds\n", cpus)
+	fmt.Printf("> building %d concurrent crossbuilds\n", buildNum)
 
 	// Pull build image first
 	err = sh.RunCommand("docker", "pull", dockerBuilderImageName+":"+goVersion)
