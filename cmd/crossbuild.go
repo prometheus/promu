@@ -320,7 +320,7 @@ func (pg platformGroup) Build(repoPath string) error {
 	// If we build with a local docker we mount /go/pkg/ to share go mod cache
 	if len(os.Getenv("DOCKER_HOST")) == 0 {
 		args = append(args, "-v", firstGoPath()+"/pkg/:/go/pkg/")
-		args = append(args, "-v", firstGoPath()+"/.:/app/")
+		args = append(args, "-v", cwd+"/.:/app/")
 	}
 
 	args = append(args, pg.DockerImage, "-i", repoPath, "-p", pg.Platform)
