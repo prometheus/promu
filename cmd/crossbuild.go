@@ -326,6 +326,13 @@ func (pg platformGroup) Build(repoPath string) error {
 		return err
 	}
 
+	if len(os.Getenv("DOCKER_HOST")) > 0 {
+		err = sh.RunCommand("docker", "cp", firstGoPath()+"/pkg/", ctrName+":/go/pkg/")
+		if err != nil {
+			return err
+		}
+	}
+
 	err = sh.RunCommand("docker", "start", "-a", ctrName)
 	if err != nil {
 		return err
