@@ -32,7 +32,7 @@ jobs:
     - run: env
     - run: sudo rm -rf /usr/local/go
     - run: wget https://dl.google.com/go/go1.13.8.linux-amd64.tar.gz
-    - run: sudo tar -C /usr/local -xzf go1.13.8.linux-amd64.tar.gz
+    - run: sudo tar -C /usr/local -xzf go1.13.8.linux-amd64.tar.gz && rm -f go1.13.8.linux-amd64.tar.gz
     - run: make promu
     - run: make build
     - run: CROSSBUILDN=1 promu crossbuild -v

@@ -320,6 +320,7 @@ func (pg platformGroup) Build(repoPath string) error {
 	// If we build with a local docker we mount /go/pkg/ to share go mod cache
 	if len(os.Getenv("DOCKER_HOST")) == 0 {
 		args = append(args, "-v", firstGoPath()+"/pkg/:/go/pkg/")
+		args = append(args, "-v", firstGoPath()+"/.:/app/")
 	}
 
 	args = append(args, pg.DockerImage, "-i", repoPath, "-p", pg.Platform)
@@ -340,27 +341,30 @@ func (pg platformGroup) Build(repoPath string) error {
 		".build",
 	}
 
-FILES:
-	for _, file := range files {
-		for _, ex := range excludes {
-			if file.Name() == ex {
-				continue FILES
+	// Only do docker cp if using remote docker
+	if len(os.Getenv("DOCKER_HOST")) > 0 {
+	FILES:
+		for _, file := range files {
+			for _, ex := range excludes {
+				if file.Name() == ex {
+					continue FILES
+				}
 			}
-		}
 
-		var src, dst string
+			var src, dst string
 
-		if !file.IsDir() {
-			src = path.Join(cwd, file.Name())
-			dst = ctrName + ":" + path.Join("/app", file.Name())
-		} else {
-			src = path.Join(cwd, file.Name()) + "/"
-			dst = ctrName + ":" + path.Join("/app", file.Name()) + "/"
-		}
+			if !file.IsDir() {
+				src = path.Join(cwd, file.Name())
+				dst = ctrName + ":" + path.Join("/app", file.Name())
+			} else {
+				src = path.Join(cwd, file.Name()) + "/"
+				dst = ctrName + ":" + path.Join("/app", file.Name()) + "/"
+			}
 
-		err = sh.RunCommand("docker", "cp", src, dst)
-		if err != nil {
-			return err
+			err = sh.RunCommand("docker", "cp", src, dst)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
