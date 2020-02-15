@@ -17,10 +17,6 @@ package cmd
 import (
 	"fmt"
 	"log"
-	"math"
-	"os"
-	"runtime"
-	"strconv"
 	"strings"
 	"time"
 
@@ -145,22 +141,11 @@ func runCrossbuild() {
 		warn(errors.Errorf("unknown/unhandled platforms: %s", unknownPlatforms))
 	}
 
-	var buildNum int
-
-	// Use CROSSBUILDN for concurrent build number is present
-	if len(os.Getenv("CROSSBUILDN")) > 0 {
-		buildNum, _ = strconv.Atoi(os.Getenv("CROSSBUILDN"))
-	}
-
-	// Use number of CPU - 1 as concurrent build number
-	if buildNum == 0 {
-		buildNum = int(math.Max(1, float64(runtime.NumCPU())-1))
-	}
-
-	sem := make(chan struct{}, buildNum)
+	sem := make(chan struct{}, *crossbuildJobs)
 	errs := make([]error, 0, len(platforms))
 
-	fmt.Printf("> building up to %d concurrent crossbuilds\n", buildNum)
+	fmt.Printf("~ building up to %d concurrent crossbuilds\n", *crossbuildJobs)
+	fmt.Printf("~ building up to %d concurrent binaries\n", *binaryJobs)
 
 	// Launching builds concurrently
 	for _, platform := range platforms {
@@ -170,10 +155,11 @@ func runCrossbuild() {
 		goarch := platform[strings.Index(platform, "/")+1:]
 
 		go func(goos string, goarch string) {
+			fmt.Printf("< building platform %s/%s\n", goos, goarch)
 			start := time.Now()
 			runBuild(goos, goarch, "all")
 			duration := time.Since(start)
-			fmt.Printf("> build %s took %v\n", platform, duration.Round(time.Millisecond))
+			fmt.Printf("> %s/%s (built in %v)\n", goos, goarch, duration.Round(time.Millisecond))
 			<-sem
 		}(goos, goarch)
 	}

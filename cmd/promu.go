@@ -122,6 +122,7 @@ func Execute() {
 
 	switch command {
 	case buildcmd.FullCommand():
+		fmt.Printf("~ building up to %d concurrent binaries\n", *binaryJobs)
 		runBuild(os.Getenv("GOOS"), os.Getenv("GOARCH"), optArg(*binariesArg, 0, "all"))
 	case checkLicensescmd.FullCommand():
 		runCheckLicenses(optArg(*checkLicLocation, 0, "."), *headerLength, *sourceExtensions)

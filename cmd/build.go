@@ -18,11 +18,8 @@ import (
 	"bytes"
 	"fmt"
 	"log"
-	"math"
 	"os"
 	"path"
-	"runtime"
-	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -35,6 +32,8 @@ import (
 )
 
 var (
+	binaryJobs      = app.Flag("binary-jobs", "Number of binaries to build simultaneously").Default("1").Int()
+	crossbuildJobs  = app.Flag("crossbuild-jobs", "Number of crossbuilds to run simultaneously").Default("1").Int()
 	buildcmd        = app.Command("build", "Build a Go project")
 	buildCgoFlagSet bool
 	buildCgoFlag    = buildcmd.Flag("cgo", "Enable CGO").
@@ -70,14 +69,24 @@ OUTER:
 }
 
 func buildBinary(goos string, goarch string, ext string, prefix string, ldflags string, binary Binary) error {
-	info("Building binary: " + binary.Name)
-	binaryName := fmt.Sprintf("%s%s", binary.Name, ext)
-	fmt.Printf(" >   %s\n", binaryName)
+	var binaryName, binaryPrettyName string
+
+	if len(goos) > 0 && len(goarch) > 0 {
+		platform := fmt.Sprintf("%s/%s", goos, goarch)
+		binaryName = fmt.Sprintf(".build/%s/%s%s", platform, binary.Name, ext)
+		binaryPrettyName = fmt.Sprintf("%s %s", platform, binary.Name)
+	} else {
+		binaryName = fmt.Sprintf("%s%s", binary.Name, ext)
+		binaryPrettyName = fmt.Sprintf("%s", binary.Name)
+	}
+
+	info(" < builing binary " + binaryPrettyName)
 
 	repoPath := config.Repository.Path
 	flags := config.Build.Flags
 
-	params := []string{"build",
+	params := []string{
+		"build",
 		"-o", path.Join(prefix, binaryName),
 		"-ldflags", ldflags,
 	}
@@ -85,15 +94,34 @@ func buildBinary(goos string, goarch string, ext string, prefix string, ldflags 
 	params = append(params, sh.SplitParameters(flags)...)
 	params = append(params, path.Join(repoPath, binary.Path))
 
-	env := []string{
-		"GOOS=" + goos,
-		"GOARCH=" + goarch,
+	var armversion string
+	var env []string
+
+	if strings.Index(goarch, "arm") == 0 && goarch != "arm" && goarch != "arm64" {
+		armversion = goarch[4:]
+		goarch = "arm"
+
+		env = []string{
+			"GOOS=" + goos,
+			"GOARCH=" + goarch,
+			"GOARM=" + armversion,
+		}
+	} else {
+		env = []string{
+			"GOOS=" + goos,
+			"GOARCH=" + goarch,
+		}
 	}
 
-	info("Building binary: " + "go " + strings.Join(params, " "))
+	start := time.Now()
 	if err := sh.RunCommandWithEnv("go", env, params...); err != nil {
-		return errors.Wrap(err, "command failed: "+strings.Join(params, " "))
+		duration := time.Since(start)
+		fmt.Printf(" > %s failed after %v\n", binaryPrettyName, duration.Round(time.Millisecond))
+		return err
 	}
+
+	duration := time.Since(start)
+	fmt.Printf(" > %s (built in %v)\n", binaryPrettyName, duration.Round(time.Millisecond))
 
 	return nil
 }
@@ -145,22 +173,8 @@ func runBuild(goos, goarch, binariesString string) {
 		}
 	}
 
-	var buildNum int
-
-	// Use CROSSBUILDN for concurrent build number is present
-	if len(os.Getenv("CROSSBUILDN")) > 0 {
-		buildNum, _ = strconv.Atoi(os.Getenv("CROSSBUILDN"))
-	}
-
-	// Use number of CPU - 1 as concurrent build number
-	if buildNum == 0 {
-		buildNum = int(math.Max(1, float64(runtime.NumCPU())-1))
-	}
-
-	sem := make(chan struct{}, buildNum)
+	sem := make(chan struct{}, *binaryJobs)
 	errs := make([]error, 0, len(binariesToBuild))
-
-	fmt.Printf("> building up to %d binaries concurrently\n", buildNum)
 
 	for _, binary := range binariesToBuild {
 		sem <- struct{}{}
@@ -188,7 +202,7 @@ func runBuild(goos, goarch, binariesString string) {
 			printErr(err)
 		}
 
-		fatal(errors.New("Crossbuild failed"))
+		fatal(errors.New("Build failed"))
 	}
 }
 

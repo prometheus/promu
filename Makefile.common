@@ -236,7 +236,7 @@ common-docker-manifest:
 promu: $(PROMU)
 
 $(PROMU):
-	GO111MODULE=$(GO111MODULE) GOPATH=$(GOPATH) GOOS= GOARCH= $(GO) install .
+	GO111MODULE=$(GO111MODULE) GOPATH=$(GOPATH) GOOS="" GOARCH="" $(GO) install .
 
 .PHONY: proto
 proto:

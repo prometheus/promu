@@ -20,6 +20,8 @@ import (
 	"os/exec"
 	"regexp"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 // Verbose enables verbose output
@@ -27,34 +29,61 @@ var Verbose bool
 
 // RunCommand executes a shell command.
 func RunCommand(name string, arg ...string) error {
+	var cmdText string
+
 	if Verbose {
-		cmdText := name + " " + strings.Join(arg, " ")
-		fmt.Fprintln(os.Stderr, "+ ", cmdText)
+		cmdText = name + " " + strings.Join(QuoteParams(arg), " ")
+		fmt.Fprintln(os.Stderr, " + ", cmdText)
 	}
+
 	cmd := exec.Command(name, arg...)
 	cmd.Stdout = os.Stdout
 	cmd.Stdin = os.Stdin
 	cmd.Stderr = os.Stderr
-	return cmd.Run()
+
+	err := cmd.Run()
+
+	return errors.Wrap(err, "command failed: "+cmdText)
 }
 
 // RunCommandWithEnv executes a shell command.
 func RunCommandWithEnv(name string, env []string, arg ...string) error {
+	var cmdText string
+
 	if Verbose {
-		cmdText := name + " " + strings.Join(arg, " ")
-		fmt.Fprintln(os.Stderr, "+ ", cmdText)
+		cmdText = strings.Join(env, " ") + " " + name + " " + strings.Join(QuoteParams(arg), " ")
+		fmt.Fprintln(os.Stderr, " +", cmdText)
 	}
+
 	cmd := exec.Command(name, arg...)
 	cmd.Env = append(cmd.Env, os.Environ()...)
 	cmd.Env = append(cmd.Env, env...)
 	cmd.Stdout = os.Stdout
 	cmd.Stdin = os.Stdin
 	cmd.Stderr = os.Stderr
-	return cmd.Run()
+
+	err := cmd.Run()
+
+	return errors.Wrap(err, "command failed: "+cmdText)
 }
 
 // SplitParameters splits shell command parameters, taking quoting in account.
 func SplitParameters(s string) []string {
 	r := regexp.MustCompile(`'[^']*'|[^ ]+`)
 	return r.FindAllString(s, -1)
+}
+
+// QuoteParams returns params array ready for display
+func QuoteParams(params []string) []string {
+	quoted := make([]string, len(params))
+
+	for k, v := range params {
+		if strings.Index(v, " ") != -1 {
+			quoted[k] = `"` + strings.ReplaceAll(v, `"`, `\\"`) + `"`
+		} else {
+			quoted[k] = v
+		}
+	}
+
+	return quoted
 }
