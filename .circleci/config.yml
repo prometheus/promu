@@ -35,7 +35,7 @@ jobs:
     - run: |
         sudo rm -rf /usr/local/go
         wget https://dl.google.com/go/go${GOVERSION}.linux-amd64.tar.gz
-        sudo tar -C /usr/local -xzf go${GOVERSION}linux-amd64.tar.gz
+        sudo tar -C /usr/local -xzf go${GOVERSION}.linux-amd64.tar.gz
         rm -f go${GOVERSION}.linux-amd64.tar.gz
     - restore_cache:
         keys:
