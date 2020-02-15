@@ -6,7 +6,7 @@ repository:
     path: github.com/prometheus/promu
 build:
     flags: -mod=vendor -tags 'netgo static_build'
-    ldflags: |
+    ldflags: |-
         -s
         -X github.com/prometheus/common/version.Version={{.Version}}
         -X github.com/prometheus/common/version.Revision={{.Revision}}

@@ -151,11 +151,11 @@ func runCrossbuild() {
 
 	// Wait for builds to finish
 	for {
-		if len(sem) == 0 {
+		if len(sem) != 0 {
+			time.Sleep(100 * time.Millisecond)
+		} else {
 			break
 		}
-
-		time.Sleep(2 * time.Second)
 	}
 
 	if len(errs) > 0 {
