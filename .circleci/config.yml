@@ -9,16 +9,23 @@ executors:
 
 jobs:
   test:
-    executor: golang
+    machine:
+      image: ubuntu-1604:201903-01
+    working_directory: /home/circleci/.go_workspace/src/github.com/prometheus/promu
+    environment:
+      GOCACHE: /home/circleci/.cache/go-build
+      GOVERSION: 1.13.8
 
     steps:
     - setup_remote_docker
     - checkout
-    - run: |
-        sudo rm -rf /usr/local/go
-        wget https://dl.google.com/go/go${GOVERSION}.linux-amd64.tar.gz
-        sudo tar -C /usr/local -xzf go${GOVERSION}.linux-amd64.tar.gz
-        rm -f go${GOVERSION}.linux-amd64.tar.gz
+    - run:
+        name: install go
+        command: |
+          sudo rm -rf /usr/local/go
+          wget https://dl.google.com/go/go${GOVERSION}.linux-amd64.tar.gz
+          sudo tar -C /usr/local -xzf go${GOVERSION}.linux-amd64.tar.gz
+          rm -f go${GOVERSION}.linux-amd64.tar.gz
     - run: make promu
     - run: make check_license style unused lint test build
     - store_artifacts:
@@ -37,11 +44,13 @@ jobs:
 
     steps:
     - checkout
-    - run: |
-        sudo rm -rf /usr/local/go
-        wget https://dl.google.com/go/go${GOVERSION}.linux-amd64.tar.gz
-        sudo tar -C /usr/local -xzf go${GOVERSION}.linux-amd64.tar.gz
-        rm -f go${GOVERSION}.linux-amd64.tar.gz
+    - run:
+        name: install go
+        command: |
+          sudo rm -rf /usr/local/go
+          wget https://dl.google.com/go/go${GOVERSION}.linux-amd64.tar.gz
+          sudo tar -C /usr/local -xzf go${GOVERSION}.linux-amd64.tar.gz
+          rm -f go${GOVERSION}.linux-amd64.tar.gz
     - restore_cache:
         keys:
         - v01-gocache-{{ checksum "go.mod" }}
