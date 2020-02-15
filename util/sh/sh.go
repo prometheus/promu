@@ -78,7 +78,7 @@ func QuoteParams(params []string) []string {
 	quoted := make([]string, len(params))
 
 	for k, v := range params {
-		if strings.Index(v, " ") != -1 {
+		if strings.Index(v, " ") != -1 && string(v[0]) != `'` && string(v[0]) != `"` {
 			quoted[k] = `"` + strings.ReplaceAll(v, `"`, `\\"`) + `"`
 		} else {
 			quoted[k] = v
