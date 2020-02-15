@@ -14,8 +14,7 @@
 include Makefile.common
 
 .PHONY: build
-build:
-	@echo ">> installing promu"
-	GO111MODULE=$(GO111MODULE) GOOS= GOARCH= $(GO) install github.com/prometheus/promu
+
+build: $(PROMU)
 	@echo ">> rebuilding binaries using promu"
 	GO111MODULE=$(GO111MODULE) $(PROMU) build --prefix $(PREFIX)

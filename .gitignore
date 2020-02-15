@@ -1,4 +1,5 @@
 /promu
 .build
 .tarballs
+.cache
 testoutput

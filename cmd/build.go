@@ -18,8 +18,11 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"math"
 	"os"
 	"path"
+	"runtime"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -66,7 +69,7 @@ OUTER:
 	return binaries, nil
 }
 
-func buildBinary(ext string, prefix string, ldflags string, binary Binary) {
+func buildBinary(ext string, prefix string, ldflags string, binary Binary) error {
 	info("Building binary: " + binary.Name)
 	binaryName := fmt.Sprintf("%s%s", binary.Name, ext)
 	fmt.Printf(" >   %s\n", binaryName)
@@ -83,14 +86,10 @@ func buildBinary(ext string, prefix string, ldflags string, binary Binary) {
 	params = append(params, path.Join(repoPath, binary.Path))
 	info("Building binary: " + "go " + strings.Join(params, " "))
 	if err := sh.RunCommand("go", params...); err != nil {
-		fatal(errors.Wrap(err, "command failed: "+strings.Join(params, " ")))
+		return errors.Wrap(err, "command failed: "+strings.Join(params, " "))
 	}
-}
 
-func buildAll(ext string, prefix string, ldflags string, binaries []Binary) {
-	for _, binary := range binaries {
-		buildBinary(ext, prefix, ldflags, binary)
-	}
+	return nil
 }
 
 func runBuild(binariesString string) {
@@ -126,19 +125,64 @@ func runBuild(binariesString string) {
 	}
 	defer os.Unsetenv("CGO_ENABLED")
 
+	var binariesToBuild []Binary
+
 	if binariesString == "all" {
-		buildAll(ext, prefix, ldflags, binaries)
-		return
+		binariesToBuild = binaries
+	} else {
+		var err error
+		binariesArray := strings.Split(binariesString, ",")
+		binariesToBuild, err = validateBinaryNames(binariesArray, binaries)
+
+		if err != nil {
+			fatal(errors.Wrap(err, "validation of given binary names for build command failed"))
+		}
 	}
 
-	binariesArray := strings.Split(binariesString, ",")
-	binariesToBuild, err := validateBinaryNames(binariesArray, binaries)
-	if err != nil {
-		fatal(errors.Wrap(err, "validation of given binary names for build command failed"))
+	var buildNum int
+
+	// Use CROSSBUILDN for concurrent build number is present
+	if len(os.Getenv("CROSSBUILDN")) > 0 {
+		buildNum, _ = strconv.Atoi(os.Getenv("CROSSBUILDN"))
 	}
+
+	// Use number of CPU - 1 as concurrent build number
+	if buildNum == 0 {
+		buildNum = int(math.Max(1, float64(runtime.NumCPU())-1))
+	}
+
+	sem := make(chan struct{}, buildNum)
+	errs := make([]error, 0, len(binariesToBuild))
+
+	fmt.Printf("> building up to %d binaries concurrently\n", buildNum)
 
 	for _, binary := range binariesToBuild {
-		buildBinary(ext, prefix, ldflags, binary)
+		sem <- struct{}{}
+		go func(binary Binary) {
+			err := buildBinary(ext, prefix, ldflags, binary)
+
+			if err != nil {
+				errs = append(errs, err)
+			}
+			<-sem
+		}(binary)
+	}
+
+	// Wait for builds to finish
+	for {
+		if len(sem) == 0 {
+			break
+		}
+
+		time.Sleep(2 * time.Second)
+	}
+
+	if len(errs) > 0 {
+		for _, err := range errs {
+			printErr(err)
+		}
+
+		fatal(errors.New("Crossbuild failed"))
 	}
 }
 

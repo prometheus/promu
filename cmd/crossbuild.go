@@ -38,13 +38,19 @@ var (
 	dockerBuilderImageName = "quay.io/prometheus/golang-builder"
 
 	defaultMainPlatforms = []string{
-		"linux/amd64", "linux/386", "darwin/amd64", "darwin/386", "windows/amd64", "windows/386",
-		"freebsd/amd64", "freebsd/386", "openbsd/amd64", "openbsd/386", "netbsd/amd64", "netbsd/386",
+		"linux/amd64", "linux/386",
+		"darwin/amd64", "darwin/386",
+		"windows/amd64", "windows/386",
+		"freebsd/amd64", "freebsd/386",
+		"openbsd/amd64", "openbsd/386",
+		"netbsd/amd64", "netbsd/386",
 		"dragonfly/amd64",
 	}
 	defaultARMPlatforms = []string{
-		"linux/armv5", "linux/armv6", "linux/armv7", "linux/arm64", "freebsd/armv6", "freebsd/armv7",
-		"openbsd/armv7", "netbsd/armv6", "netbsd/armv7",
+		"linux/armv5", "linux/armv6", "linux/armv7", "linux/arm64",
+		"freebsd/armv6", "freebsd/armv7",
+		"openbsd/armv7",
+		"netbsd/armv6", "netbsd/armv7",
 	}
 	defaultPowerPCPlatforms = []string{
 		"aix/ppc64", "linux/ppc64", "linux/ppc64le",
@@ -159,18 +165,11 @@ func runCrossbuild() {
 	var pgroups []platformGroup
 
 	if !cgo {
-		// In non-CGO, use the base image without any crossbuild toolchain
-		var allPlatforms []string
-		allPlatforms = append(allPlatforms, mainPlatforms[:]...)
-		allPlatforms = append(allPlatforms, armPlatforms[:]...)
-		allPlatforms = append(allPlatforms, powerPCPlatforms[:]...)
-		allPlatforms = append(allPlatforms, mipsPlatforms[:]...)
-		allPlatforms = append(allPlatforms, s390xPlatforms[:]...)
-
-		for _, platform := range allPlatforms {
-			name := "base-" + strings.ReplaceAll(platform, "/", "-")
-			pgroups = append(pgroups, platformGroup{name, dockerBaseBuilderImage, platform})
-		}
+		pgroups = append(pgroups, platformGroup{"base-main", dockerBaseBuilderImage, mainPlatforms})
+		pgroups = append(pgroups, platformGroup{"base-arm", dockerBaseBuilderImage, armPlatforms})
+		pgroups = append(pgroups, platformGroup{"base-powerpc", dockerBaseBuilderImage, powerPCPlatforms})
+		pgroups = append(pgroups, platformGroup{"base-mips", dockerBaseBuilderImage, mipsPlatforms})
+		pgroups = append(pgroups, platformGroup{"base-s390x", dockerBaseBuilderImage, s390xPlatforms})
 
 		// Pull build image
 		err := dockerPull(dockerBaseBuilderImage)
@@ -179,10 +178,7 @@ func runCrossbuild() {
 		}
 	} else {
 		if len(mainPlatforms) > 0 {
-			for _, platform := range mainPlatforms {
-				name := "base-" + strings.ReplaceAll(platform, "/", "-")
-				pgroups = append(pgroups, platformGroup{name, dockerMainBuilderImage, platform})
-			}
+			pgroups = append(pgroups, platformGroup{"main", dockerMainBuilderImage, mainPlatforms})
 
 			err := dockerPull(dockerMainBuilderImage)
 			if err != nil {
@@ -191,10 +187,7 @@ func runCrossbuild() {
 		}
 
 		if len(armPlatforms) > 0 {
-			for _, platform := range armPlatforms {
-				name := "arm-" + strings.ReplaceAll(platform, "/", "-")
-				pgroups = append(pgroups, platformGroup{name, dockerARMBuilderImage, platform})
-			}
+			pgroups = append(pgroups, platformGroup{"arm", dockerARMBuilderImage, armPlatforms})
 
 			err := dockerPull(dockerARMBuilderImage)
 			if err != nil {
@@ -203,10 +196,7 @@ func runCrossbuild() {
 		}
 
 		if len(powerPCPlatforms) > 0 {
-			for _, platform := range powerPCPlatforms {
-				name := "powerpc-" + strings.ReplaceAll(platform, "/", "-")
-				pgroups = append(pgroups, platformGroup{name, dockerPowerPCBuilderImage, platform})
-			}
+			pgroups = append(pgroups, platformGroup{"powerpc", dockerPowerPCBuilderImage, powerPCPlatforms})
 
 			err := dockerPull(dockerPowerPCBuilderImage)
 			if err != nil {
@@ -215,10 +205,7 @@ func runCrossbuild() {
 		}
 
 		if len(mipsPlatforms) > 0 {
-			for _, platform := range mipsPlatforms {
-				name := "mips-" + strings.ReplaceAll(platform, "/", "-")
-				pgroups = append(pgroups, platformGroup{name, dockerMIPSBuilderImage, platform})
-			}
+			pgroups = append(pgroups, platformGroup{"mips", dockerMIPSBuilderImage, mipsPlatforms})
 
 			err := dockerPull(dockerMIPSBuilderImage)
 			if err != nil {
@@ -227,10 +214,7 @@ func runCrossbuild() {
 		}
 
 		if len(s390xPlatforms) > 0 {
-			for _, platform := range s390xPlatforms {
-				name := "s390x-" + strings.ReplaceAll(platform, "/", "-")
-				pgroups = append(pgroups, platformGroup{name, dockerS390XBuilderImage, platform})
-			}
+			pgroups = append(pgroups, platformGroup{"s390x", dockerS390XBuilderImage, s390xPlatforms})
 
 			err := dockerPull(dockerS390XBuilderImage)
 			if err != nil {
@@ -254,7 +238,7 @@ func runCrossbuild() {
 	sem := make(chan struct{}, buildNum)
 	errs := make([]error, 0, len(platforms))
 
-	fmt.Printf("> building %d concurrent crossbuilds\n", buildNum)
+	fmt.Printf("> building up to %d concurrent crossbuilds\n", buildNum)
 
 	// Launching builds concurrently
 	for _, pg := range pgroups {
@@ -292,7 +276,7 @@ func runCrossbuild() {
 type platformGroup struct {
 	Name        string
 	DockerImage string
-	Platform    string
+	Platforms   []string
 }
 
 func dockerPull(image string) error {
@@ -302,8 +286,11 @@ func dockerPull(image string) error {
 	return err
 }
 
+const localGoCacheDir = ".cache/go-build"
+const containerGoCacheDir = "/go/.cache/go-build"
+
 func (pg platformGroup) Build(repoPath string) error {
-	if len(pg.Platform) == 0 {
+	if len(pg.Platforms) == 0 {
 		return nil
 	}
 
@@ -319,11 +306,18 @@ func (pg platformGroup) Build(repoPath string) error {
 
 	// If we build with a local docker we mount /go/pkg/ to share go mod cache
 	if len(os.Getenv("DOCKER_HOST")) == 0 {
+		_, err := os.Stat(localGoCacheDir)
+		if err != nil {
+			os.MkdirAll(localGoCacheDir, 0755)
+		}
+
 		args = append(args, "-v", firstGoPath()+"/pkg/:/go/pkg/")
 		args = append(args, "-v", cwd+"/.:/app/")
+		args = append(args, "-v", cwd+"/"+localGoCacheDir+"/:"+containerGoCacheDir+"/")
+		args = append(args, "--env", "GOCACHE="+containerGoCacheDir)
 	}
 
-	args = append(args, pg.DockerImage, "-i", repoPath, "-p", pg.Platform)
+	args = append(args, pg.DockerImage, "-i", repoPath, "-p", strings.Join(pg.Platforms, " "))
 
 	err = sh.RunCommand("docker", args...)
 	if err != nil {
@@ -339,6 +333,7 @@ func (pg platformGroup) Build(repoPath string) error {
 
 	excludes := []string{
 		".build",
+		".cache",
 	}
 
 	// Only do docker cp if using remote docker
@@ -381,16 +376,19 @@ func (pg platformGroup) Build(repoPath string) error {
 		return err
 	}
 
-	err = func() error {
-		// Avoid doing multiple copy at the same time
-		dockerCopyMutex.Lock()
-		defer dockerCopyMutex.Unlock()
+	// If we build using a remote docker then we cp the result of the build
+	if len(os.Getenv("DOCKER_HOST")) > 0 {
+		err = func() error {
+			// Avoid doing multiple copy at the same time
+			dockerCopyMutex.Lock()
+			defer dockerCopyMutex.Unlock()
 
-		return sh.RunCommand("docker", "cp", "-a", ctrName+":/app/.build/.", cwd+"/.build")
-	}()
+			return sh.RunCommand("docker", "cp", "-a", ctrName+":/app/.build/.", cwd+"/.build")
+		}()
 
-	if err != nil {
-		return err
+		if err != nil {
+			return err
+		}
 	}
 
 	return sh.RunCommand("docker", "rm", "-f", ctrName)
