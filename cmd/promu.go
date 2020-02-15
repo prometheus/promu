@@ -134,6 +134,8 @@ func Execute() {
 		runChecksum(optArg(*checksumLocation, 0, "."))
 	case crossbuildcmd.FullCommand():
 		runCrossbuild()
+	case crossbuilddockercmd.FullCommand():
+		runCrossbuildDocker()
 	case infocmd.FullCommand():
 		runInfo()
 	case releasecmd.FullCommand():

@@ -18,17 +18,16 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"math"
 	"os"
 	"os/exec"
 	"path"
-	"runtime"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/rogpeppe/go-internal/cache"
 
 	"github.com/prometheus/promu/util/sh"
 )
@@ -38,6 +37,8 @@ var (
 )
 
 var (
+	crossbuilddockercmd = app.Command("crossbuild-docker", "Crossbuild a Go project using Golang builder Docker images")
+
 	dockerCopyMutex sync.Mutex
 )
 
@@ -166,34 +167,26 @@ func runCrossbuildDocker() {
 		}
 	}
 
-	var buildNum int
-
-	// Use CROSSBUILDN for concurrent build number is present
-	if len(os.Getenv("CROSSBUILDN")) > 0 {
-		buildNum, _ = strconv.Atoi(os.Getenv("CROSSBUILDN"))
-	}
-
-	// Use number of CPU - 1 as concurrent build number
-	if buildNum == 0 {
-		buildNum = int(math.Max(1, float64(runtime.NumCPU())-1))
-	}
-
-	sem := make(chan struct{}, buildNum)
+	sem := make(chan struct{}, *crossbuildJobs)
 	errs := make([]error, 0, len(platforms))
 
-	fmt.Printf("> building up to %d concurrent crossbuilds\n", buildNum)
+	fmt.Printf("~ building up to %d concurrent crossbuilds\n", *crossbuildJobs)
+	fmt.Printf("~ building up to %d concurrent binaries\n", *binaryJobs)
 
 	// Launching builds concurrently
 	for _, pg := range pgroups {
 		sem <- struct{}{}
 
 		go func(pg platformGroup) {
+			fmt.Printf("< building %s\n", pg.Name)
+
 			start := time.Now()
 			if err := pg.Build(repoPath); err != nil {
 				errs = append(errs, errors.Wrapf(err, "The %s builder docker image exited unexpectedly", pg.Name))
 			}
 			duration := time.Since(start)
-			fmt.Printf("> build %s took %v\n", pg.Name, duration.Round(time.Millisecond))
+
+			fmt.Printf("> %s took (build in %v)\n", pg.Name, duration.Round(time.Millisecond))
 			<-sem
 		}(pg)
 	}
@@ -237,7 +230,7 @@ func (pg platformGroup) Build(repoPath string) error {
 		return nil
 	}
 
-	fmt.Printf("> running the %s builder docker image\n", pg.Name)
+	fmt.Printf(" > running the %s builder docker image\n", pg.Name)
 
 	cwd, err := os.Getwd()
 	if err != nil {
@@ -256,7 +249,8 @@ func (pg platformGroup) Build(repoPath string) error {
 
 		args = append(args, "-v", firstGoPath()+"/pkg/:/go/pkg/")
 		args = append(args, "-v", cwd+"/.:/app/")
-		args = append(args, "-v", cwd+"/"+localGoCacheDir+"/:"+containerGoCacheDir+"/")
+
+		args = append(args, "-v", cache.DefaultDir()+"/:"+containerGoCacheDir+"/")
 		args = append(args, "--env", "GOCACHE="+containerGoCacheDir)
 	}
 

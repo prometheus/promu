@@ -59,7 +59,7 @@ var (
 )
 
 var (
-	crossbuildcmd        = app.Command("crossbuild", "Crossbuild a Go project using Golang builder Docker images")
+	crossbuildcmd        = app.Command("crossbuild", "Crossbuild a Go project")
 	crossBuildCgoFlagSet bool
 	crossBuildCgoFlag    = crossbuildcmd.Flag("cgo", "Enable CGO using several docker images with different crossbuild toolchains.").
 				PreAction(func(c *kingpin.ParseContext) error {
