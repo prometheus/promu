@@ -69,7 +69,7 @@ OUTER:
 	return binaries, nil
 }
 
-func buildBinary(ext string, prefix string, ldflags string, binary Binary) error {
+func buildBinary(goos string, goarch string, ext string, prefix string, ldflags string, binary Binary) error {
 	info("Building binary: " + binary.Name)
 	binaryName := fmt.Sprintf("%s%s", binary.Name, ext)
 	fmt.Printf(" >   %s\n", binaryName)
@@ -84,15 +84,21 @@ func buildBinary(ext string, prefix string, ldflags string, binary Binary) error
 
 	params = append(params, sh.SplitParameters(flags)...)
 	params = append(params, path.Join(repoPath, binary.Path))
+
+	env := []string{
+		"GOOS=" + goos,
+		"GOARCH=" + goarch,
+	}
+
 	info("Building binary: " + "go " + strings.Join(params, " "))
-	if err := sh.RunCommand("go", params...); err != nil {
+	if err := sh.RunCommandWithEnv("go", env, params...); err != nil {
 		return errors.Wrap(err, "command failed: "+strings.Join(params, " "))
 	}
 
 	return nil
 }
 
-func runBuild(binariesString string) {
+func runBuild(goos, goarch, binariesString string) {
 	//Check required configuration
 	if len(strings.TrimSpace(config.Repository.Path)) == 0 {
 		log.Fatalf("missing required '%s' configuration", "repository.path")
@@ -159,7 +165,7 @@ func runBuild(binariesString string) {
 	for _, binary := range binariesToBuild {
 		sem <- struct{}{}
 		go func(binary Binary) {
-			err := buildBinary(ext, prefix, ldflags, binary)
+			err := buildBinary(goos, goarch, ext, prefix, ldflags, binary)
 
 			if err != nil {
 				errs = append(errs, err)

@@ -16,27 +16,19 @@ package cmd
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"math"
 	"os"
-	"os/exec"
-	"path"
 	"runtime"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/pkg/errors"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
-
-	"github.com/prometheus/promu/util/sh"
 )
 
 var (
-	dockerBuilderImageName = "quay.io/prometheus/golang-builder"
-
 	defaultMainPlatforms = []string{
 		"linux/amd64", "linux/386",
 		"darwin/amd64", "darwin/386",
@@ -94,8 +86,6 @@ var (
 	// crossbuild tarball subcommand at the same time, so we treat the
 	// tarball subcommand as an optional arg
 	tarballsSubcommand = crossbuildcmd.Arg("tarballs", "Optionally pass the string \"tarballs\" from cross-built binaries").String()
-
-	dockerCopyMutex sync.Mutex
 )
 
 func runCrossbuild() {
@@ -126,17 +116,10 @@ func runCrossbuild() {
 		s390xPlatforms   []string
 		unknownPlatforms []string
 
-		cgo       = config.Go.CGo
-		goVersion = config.Go.Version
-		repoPath  = config.Repository.Path
+		// cgo       = config.Go.CGo
+		// goVersion = config.Go.Version
+		// repoPath  = config.Repository.Path
 		platforms = config.Crossbuild.Platforms
-
-		dockerBaseBuilderImage    = fmt.Sprintf("%s:%s-base", dockerBuilderImageName, goVersion)
-		dockerMainBuilderImage    = fmt.Sprintf("%s:%s-main", dockerBuilderImageName, goVersion)
-		dockerARMBuilderImage     = fmt.Sprintf("%s:%s-arm", dockerBuilderImageName, goVersion)
-		dockerPowerPCBuilderImage = fmt.Sprintf("%s:%s-powerpc", dockerBuilderImageName, goVersion)
-		dockerMIPSBuilderImage    = fmt.Sprintf("%s:%s-mips", dockerBuilderImageName, goVersion)
-		dockerS390XBuilderImage   = fmt.Sprintf("%s:%s-s390x", dockerBuilderImageName, goVersion)
 	)
 
 	for _, platform := range platforms {
@@ -162,67 +145,6 @@ func runCrossbuild() {
 		warn(errors.Errorf("unknown/unhandled platforms: %s", unknownPlatforms))
 	}
 
-	var pgroups []platformGroup
-
-	if !cgo {
-		pgroups = append(pgroups, platformGroup{"base-main", dockerBaseBuilderImage, mainPlatforms})
-		pgroups = append(pgroups, platformGroup{"base-arm", dockerBaseBuilderImage, armPlatforms})
-		pgroups = append(pgroups, platformGroup{"base-powerpc", dockerBaseBuilderImage, powerPCPlatforms})
-		pgroups = append(pgroups, platformGroup{"base-mips", dockerBaseBuilderImage, mipsPlatforms})
-		pgroups = append(pgroups, platformGroup{"base-s390x", dockerBaseBuilderImage, s390xPlatforms})
-
-		// Pull build image
-		err := dockerPull(dockerBaseBuilderImage)
-		if err != nil {
-			fatal(err)
-		}
-	} else {
-		if len(mainPlatforms) > 0 {
-			pgroups = append(pgroups, platformGroup{"main", dockerMainBuilderImage, mainPlatforms})
-
-			err := dockerPull(dockerMainBuilderImage)
-			if err != nil {
-				fatal(err)
-			}
-		}
-
-		if len(armPlatforms) > 0 {
-			pgroups = append(pgroups, platformGroup{"arm", dockerARMBuilderImage, armPlatforms})
-
-			err := dockerPull(dockerARMBuilderImage)
-			if err != nil {
-				fatal(err)
-			}
-		}
-
-		if len(powerPCPlatforms) > 0 {
-			pgroups = append(pgroups, platformGroup{"powerpc", dockerPowerPCBuilderImage, powerPCPlatforms})
-
-			err := dockerPull(dockerPowerPCBuilderImage)
-			if err != nil {
-				fatal(err)
-			}
-		}
-
-		if len(mipsPlatforms) > 0 {
-			pgroups = append(pgroups, platformGroup{"mips", dockerMIPSBuilderImage, mipsPlatforms})
-
-			err := dockerPull(dockerMIPSBuilderImage)
-			if err != nil {
-				fatal(err)
-			}
-		}
-
-		if len(s390xPlatforms) > 0 {
-			pgroups = append(pgroups, platformGroup{"s390x", dockerS390XBuilderImage, s390xPlatforms})
-
-			err := dockerPull(dockerS390XBuilderImage)
-			if err != nil {
-				fatal(err)
-			}
-		}
-	}
-
 	var buildNum int
 
 	// Use CROSSBUILDN for concurrent build number is present
@@ -241,18 +163,19 @@ func runCrossbuild() {
 	fmt.Printf("> building up to %d concurrent crossbuilds\n", buildNum)
 
 	// Launching builds concurrently
-	for _, pg := range pgroups {
+	for _, platform := range platforms {
 		sem <- struct{}{}
 
-		go func(pg platformGroup) {
+		goos := platform[0:strings.Index(platform, "/")]
+		goarch := platform[strings.Index(platform, "/")+1:]
+
+		go func(goos string, goarch string) {
 			start := time.Now()
-			if err := pg.Build(repoPath); err != nil {
-				errs = append(errs, errors.Wrapf(err, "The %s builder docker image exited unexpectedly", pg.Name))
-			}
+			runBuild(goos, goarch, "all")
 			duration := time.Since(start)
-			fmt.Printf("> build %s took %v\n", pg.Name, duration.Round(time.Millisecond))
+			fmt.Printf("> build %s took %v\n", platform, duration.Round(time.Millisecond))
 			<-sem
-		}(pg)
+		}(goos, goarch)
 	}
 
 	// Wait for builds to finish
@@ -271,135 +194,4 @@ func runCrossbuild() {
 
 		fatal(errors.New("Crossbuild failed"))
 	}
-}
-
-type platformGroup struct {
-	Name        string
-	DockerImage string
-	Platforms   []string
-}
-
-func dockerPull(image string) error {
-	pull := exec.Command("docker", "pull", image)
-	err := pull.Run()
-
-	return err
-}
-
-const localGoCacheDir = ".cache/go-build"
-const containerGoCacheDir = "/go/.cache/go-build"
-
-func (pg platformGroup) Build(repoPath string) error {
-	if len(pg.Platforms) == 0 {
-		return nil
-	}
-
-	fmt.Printf("> running the %s builder docker image\n", pg.Name)
-
-	cwd, err := os.Getwd()
-	if err != nil {
-		return errors.Wrapf(err, "couldn't get current working directory")
-	}
-
-	ctrName := "promu-crossbuild-" + pg.Name + "-" + strconv.FormatInt(time.Now().Unix(), 10)
-	args := []string{"create", "-t", "--name", ctrName}
-
-	// If we build with a local docker we mount /go/pkg/ to share go mod cache
-	if len(os.Getenv("DOCKER_HOST")) == 0 {
-		_, err := os.Stat(localGoCacheDir)
-		if err != nil {
-			os.MkdirAll(localGoCacheDir, 0755)
-		}
-
-		args = append(args, "-v", firstGoPath()+"/pkg/:/go/pkg/")
-		args = append(args, "-v", cwd+"/.:/app/")
-		args = append(args, "-v", cwd+"/"+localGoCacheDir+"/:"+containerGoCacheDir+"/")
-		args = append(args, "--env", "GOCACHE="+containerGoCacheDir)
-	}
-
-	args = append(args, pg.DockerImage, "-i", repoPath, "-p", strings.Join(pg.Platforms, " "))
-
-	err = sh.RunCommand("docker", args...)
-	if err != nil {
-		return err
-	}
-
-	// Copy source one item at a time to discard the .build dir because docker cp
-	// does not honour .dockerignore
-	files, err := ioutil.ReadDir("./")
-	if err != nil {
-		return err
-	}
-
-	excludes := []string{
-		".build",
-		".cache",
-	}
-
-	// Only do docker cp if using remote docker
-	if len(os.Getenv("DOCKER_HOST")) > 0 {
-	FILES:
-		for _, file := range files {
-			for _, ex := range excludes {
-				if file.Name() == ex {
-					continue FILES
-				}
-			}
-
-			var src, dst string
-
-			if !file.IsDir() {
-				src = path.Join(cwd, file.Name())
-				dst = ctrName + ":" + path.Join("/app", file.Name())
-			} else {
-				src = path.Join(cwd, file.Name()) + "/"
-				dst = ctrName + ":" + path.Join("/app", file.Name()) + "/"
-			}
-
-			err = sh.RunCommand("docker", "cp", src, dst)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	// If we build using a remote docker then we cp our local go mod cache
-	if len(os.Getenv("DOCKER_HOST")) > 0 {
-		err = sh.RunCommand("docker", "cp", firstGoPath()+"/pkg/", ctrName+":/go/pkg/")
-		if err != nil {
-			return err
-		}
-	}
-
-	err = sh.RunCommand("docker", "start", "-a", ctrName)
-	if err != nil {
-		return err
-	}
-
-	// If we build using a remote docker then we cp the result of the build
-	if len(os.Getenv("DOCKER_HOST")) > 0 {
-		err = func() error {
-			// Avoid doing multiple copy at the same time
-			dockerCopyMutex.Lock()
-			defer dockerCopyMutex.Unlock()
-
-			return sh.RunCommand("docker", "cp", "-a", ctrName+":/app/.build/.", cwd+"/.build")
-		}()
-
-		if err != nil {
-			return err
-		}
-	}
-
-	return sh.RunCommand("docker", "rm", "-f", ctrName)
-}
-
-func firstGoPath() string {
-	gopath := os.Getenv("GOPATH")
-
-	if strings.Contains(gopath, ":") {
-		return gopath[0:strings.Index(gopath, ":")]
-	}
-
-	return gopath
 }

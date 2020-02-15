@@ -38,6 +38,21 @@ func RunCommand(name string, arg ...string) error {
 	return cmd.Run()
 }
 
+// RunCommandWithEnv executes a shell command.
+func RunCommandWithEnv(name string, env []string, arg ...string) error {
+	if Verbose {
+		cmdText := name + " " + strings.Join(arg, " ")
+		fmt.Fprintln(os.Stderr, "+ ", cmdText)
+	}
+	cmd := exec.Command(name, arg...)
+	cmd.Env = append(cmd.Env, os.Environ()...)
+	cmd.Env = append(cmd.Env, env...)
+	cmd.Stdout = os.Stdout
+	cmd.Stdin = os.Stdin
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
 // SplitParameters splits shell command parameters, taking quoting in account.
 func SplitParameters(s string) []string {
 	r := regexp.MustCompile(`'[^']*'|[^ ]+`)

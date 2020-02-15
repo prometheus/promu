@@ -122,7 +122,7 @@ func Execute() {
 
 	switch command {
 	case buildcmd.FullCommand():
-		runBuild(optArg(*binariesArg, 0, "all"))
+		runBuild(os.Getenv("GOOS"), os.Getenv("GOARCH"), optArg(*binariesArg, 0, "all"))
 	case checkLicensescmd.FullCommand():
 		runCheckLicenses(optArg(*checkLicLocation, 0, "."), *headerLength, *sourceExtensions)
 	case checkChangelogcmd.FullCommand():
