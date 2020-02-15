@@ -73,7 +73,7 @@ func buildBinary(goos string, goarch string, ext string, prefix string, ldflags 
 
 	if len(goos) > 0 && len(goarch) > 0 {
 		platform := fmt.Sprintf("%s/%s", goos, goarch)
-		binaryName = fmt.Sprintf(".build/%s/%s%s", platform, binary.Name, ext)
+		binaryName = fmt.Sprintf(".build/%s-%s/%s%s", goos, goarch, binary.Name, ext)
 		binaryPrettyName = fmt.Sprintf("%s %s", platform, binary.Name)
 	} else {
 		binaryName = fmt.Sprintf("%s%s", binary.Name, ext)
