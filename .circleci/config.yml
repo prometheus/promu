@@ -26,16 +26,27 @@ jobs:
     machine:
       image: ubuntu-1604:201903-01
     working_directory: /home/circleci/.go_workspace/src/github.com/prometheus/promu
+    environment:
+      GOCACHE: /home/circleci/.cache/go-build
+      GOVERSION: 1.13.8
 
     steps:
     - checkout
-    - run: env
-    - run: sudo rm -rf /usr/local/go
-    - run: wget https://dl.google.com/go/go1.13.8.linux-amd64.tar.gz
-    - run: sudo tar -C /usr/local -xzf go1.13.8.linux-amd64.tar.gz && rm -f go1.13.8.linux-amd64.tar.gz
+    - run: |
+      sudo rm -rf /usr/local/go
+      wget https://dl.google.com/go/go${GOVERSION}.linux-amd64.tar.gz
+      sudo tar -C /usr/local -xzf go${GOVERSION}linux-amd64.tar.gz
+      rm -f go${GOVERSION}.linux-amd64.tar.gz
+    - restore_cache:
+        keys:
+        - v01-gocache-{{ checksum "go.mod" }}
     - run: make promu
     - run: make build
-    - run: CROSSBUILDN=1 promu crossbuild -v
+    - run: promu crossbuild -v
+    - save_cache:
+        key: v01-gocache-{{ checksum "go.mod" }}
+        paths:
+        - /home/circleci/.cache/go-build
     - persist_to_workspace:
         root: .
         paths:
