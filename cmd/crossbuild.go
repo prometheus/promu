@@ -105,33 +105,18 @@ func runCrossbuild() {
 	}
 
 	var (
-		mainPlatforms    []string
-		armPlatforms     []string
-		powerPCPlatforms []string
-		mipsPlatforms    []string
-		s390xPlatforms   []string
 		unknownPlatforms []string
-
-		// cgo       = config.Go.CGo
-		// goVersion = config.Go.Version
-		// repoPath  = config.Repository.Path
-		platforms = config.Crossbuild.Platforms
+		platforms        = config.Crossbuild.Platforms
 	)
 
 	for _, platform := range platforms {
 		switch {
 		case stringInSlice(platform, defaultMainPlatforms):
-			mainPlatforms = append(mainPlatforms, platform)
 		case stringInSlice(platform, defaultARMPlatforms):
-			armPlatforms = append(armPlatforms, platform)
 		case stringInSlice(platform, defaultPowerPCPlatforms):
-			powerPCPlatforms = append(powerPCPlatforms, platform)
 		case stringInSlice(platform, defaultMIPSPlatforms):
-			mipsPlatforms = append(mipsPlatforms, platform)
 		case stringInSlice(platform, defaultS390Platforms):
-			s390xPlatforms = append(s390xPlatforms, platform)
 		case stringInMapKeys(platform, armPlatformsAliases):
-			armPlatforms = append(armPlatforms, armPlatformsAliases[platform]...)
 		default:
 			unknownPlatforms = append(unknownPlatforms, platform)
 		}
