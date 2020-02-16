@@ -127,6 +127,8 @@ func runCrossbuild() {
 	}
 
 	sem := make(chan struct{}, *crossbuildJobs)
+	done := make(chan struct{}, len(platforms))
+	counter := make(chan struct{}, len(platforms))
 	errs := make([]error, 0, len(platforms))
 
 	fmt.Printf("~ building up to %d concurrent crossbuilds\n", *crossbuildJobs)
@@ -141,20 +143,26 @@ func runCrossbuild() {
 
 		go func(goos string, goarch string) {
 			fmt.Printf("< building platform %s/%s\n", goos, goarch)
+
 			start := time.Now()
 			runBuild(goos, goarch, "all")
 			duration := time.Since(start)
+
+			done <- <-sem
+			counter <- struct{}{}
+
 			fmt.Printf("> %s/%s (built in %v)\n", goos, goarch, duration.Round(time.Millisecond))
-			<-sem
+
+			if i := len(platforms) - len(counter); i > 0 {
+				fmt.Printf("~ %d platforms remaining\n", i)
+			}
 		}(goos, goarch)
 	}
 
 	// Wait for builds to finish
-	for {
-		if len(sem) != 0 {
-			time.Sleep(100 * time.Millisecond)
-		} else {
-			break
+	for range done {
+		if len(done) == 0 && len(sem) == 0 {
+			close(done)
 		}
 	}
 

@@ -168,6 +168,8 @@ func runCrossbuildDocker() {
 	}
 
 	sem := make(chan struct{}, *crossbuildJobs)
+	done := make(chan struct{})
+	counter := make(chan struct{}, len(platforms))
 	errs := make([]error, 0, len(platforms))
 
 	fmt.Printf("~ building up to %d concurrent crossbuilds\n", *crossbuildJobs)
@@ -178,7 +180,7 @@ func runCrossbuildDocker() {
 		sem <- struct{}{}
 
 		go func(pg platformGroup) {
-			fmt.Printf("< building %s\n", pg.Name)
+			fmt.Printf("< building platform group %s\n", pg.Name)
 
 			start := time.Now()
 			if err := pg.Build(repoPath); err != nil {
@@ -186,17 +188,21 @@ func runCrossbuildDocker() {
 			}
 			duration := time.Since(start)
 
+			done <- <-sem
+			counter <- struct{}{}
+
 			fmt.Printf("> %s took (build in %v)\n", pg.Name, duration.Round(time.Millisecond))
-			<-sem
+
+			if i := len(platforms) - len(counter); i > 0 {
+				fmt.Printf("~ %d platform groups remaining\n", i)
+			}
 		}(pg)
 	}
 
 	// Wait for builds to finish
-	for {
-		if len(sem) != 0 {
-			time.Sleep(100 * time.Millisecond)
-		} else {
-			break
+	for range done {
+		if len(done) == 0 && len(sem) == 0 {
+			close(done)
 		}
 	}
 

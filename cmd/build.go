@@ -174,26 +174,27 @@ func runBuild(goos, goarch, binariesString string) {
 	}
 
 	sem := make(chan struct{}, *binaryJobs)
+	done := make(chan struct{})
 	errs := make([]error, 0, len(binariesToBuild))
 
 	for _, binary := range binariesToBuild {
 		sem <- struct{}{}
+
 		go func(binary Binary) {
 			err := buildBinary(goos, goarch, ext, prefix, ldflags, binary)
 
 			if err != nil {
 				errs = append(errs, err)
 			}
-			<-sem
+
+			done <- <-sem
 		}(binary)
 	}
 
 	// Wait for builds to finish
-	for {
-		if len(sem) != 0 {
-			time.Sleep(100 * time.Millisecond)
-		} else {
-			break
+	for range done {
+		if len(done) == 0 && len(sem) == 0 {
+			close(done)
 		}
 	}
 
