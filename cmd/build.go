@@ -20,6 +20,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 	"text/template"
 	"time"
@@ -80,7 +81,21 @@ func buildBinary(goos string, goarch string, ext string, prefix string, ldflags 
 		binaryPrettyName = fmt.Sprintf("%s", binary.Name)
 	}
 
-	info(" < builing binary " + binaryPrettyName)
+	var dir string
+	for base := binary.Path; len(base) > 1; base = path.Dir(base) {
+		gomod := path.Join(base, "go.mod")
+		gosum := path.Join(base, "go.sum")
+
+		if _, err := os.Stat(gomod); err == nil {
+			if _, err := os.Stat(gosum); err == nil {
+				dir, _ = filepath.Abs(base)
+				info(" ~ go.mod found in " + dir)
+				break
+			}
+		}
+	}
+
+	info(" < building binary " + binaryPrettyName)
 
 	repoPath := config.Repository.Path
 	flags := config.Build.Flags
@@ -92,7 +107,12 @@ func buildBinary(goos string, goarch string, ext string, prefix string, ldflags 
 	}
 
 	params = append(params, sh.SplitParameters(flags)...)
-	params = append(params, path.Join(repoPath, binary.Path))
+
+	if len(binary.Module) > 0 {
+		params = append(params, binary.Module)
+	} else {
+		params = append(params, path.Join(repoPath, binary.Path))
+	}
 
 	var armversion string
 	var env []string
@@ -114,7 +134,7 @@ func buildBinary(goos string, goarch string, ext string, prefix string, ldflags 
 	}
 
 	start := time.Now()
-	if err := sh.RunCommandWithEnv("go", env, params...); err != nil {
+	if err := sh.RunCommandWithEnv("go", dir, env, params...); err != nil {
 		duration := time.Since(start)
 		fmt.Printf(" > %s failed after %v\n", binaryPrettyName, duration.Round(time.Millisecond))
 		return err

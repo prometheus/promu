@@ -47,11 +47,14 @@ func RunCommand(name string, arg ...string) error {
 }
 
 // RunCommandWithEnv executes a shell command.
-func RunCommandWithEnv(name string, env []string, arg ...string) error {
+func RunCommandWithEnv(name string, dir string, env []string, arg ...string) error {
 	var cmdText string
 
 	if Verbose {
-		cmdText = strings.Join(env, " ") + " " + name + " " + strings.Join(QuoteParams(arg), " ")
+		if len(dir) > 0 {
+			cmdText = "PWD=" + dir + " "
+		}
+		cmdText = cmdText + strings.Join(env, " ") + " " + name + " " + strings.Join(QuoteParams(arg), " ")
 		fmt.Fprintln(os.Stderr, " +", cmdText)
 	}
 
@@ -61,6 +64,10 @@ func RunCommandWithEnv(name string, env []string, arg ...string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stdin = os.Stdin
 	cmd.Stderr = os.Stderr
+
+	if len(dir) > 0 {
+		cmd.Dir = dir
+	}
 
 	err := cmd.Run()
 

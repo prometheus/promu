@@ -36,8 +36,9 @@ const (
 
 // Binary represents a built binary.
 type Binary struct {
-	Name string
-	Path string
+	Name   string
+	Path   string
+	Module string
 }
 
 // Config contains the Promu Command Configuration
