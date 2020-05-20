@@ -18,6 +18,10 @@ parameters:
     description: Path to Dockerfile
     type: string
     default: ""
+  dockerbuild_context:
+    description: Path to Dockerbuild context
+    type: string
+    default: ""
   container_image_name:
     description: Name of the container image
     type: string
@@ -33,6 +37,10 @@ steps:
     condition: << parameters.container_image_name >>
     steps:
     - run: echo "export DOCKER_IMAGE_NAME=<< parameters.container_image_name >>" >> $BASH_ENV
+- when:
+    condition: << parameters.dockerbuild_context >>
+    steps:
+    - run: echo "export DOCKERBUILD_CONTEXT=<< parameters.dockerbuild_context >>" >> $BASH_ENV
 - run: make docker DOCKER_REPO=<< parameters.registry >>/<< parameters.organization >>
 - run: docker images
 - run: docker login -u $<< parameters.login_variable >> -p $<< parameters.password_variable >> << parameters.registry >>
