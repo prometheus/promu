@@ -9,11 +9,11 @@ parameters:
 
 steps:
 - run:
-   command: |
-     curl -s -L https://github.com/protocolbuffers/protobuf/releases/download/v<< parameters.version >>/protoc-<< parameters.version >>-linux-x86_64.zip > /tmp/protoc.zip
-     unzip -d /tmp /tmp/protoc.zip
-     chmod +x /tmp/bin/protoc
-     echo 'export PATH=/tmp/bin:$PATH' >> $BASH_ENV
-     source $BASH_ENV
-     make proto
+    command: |
+      curl -s -L https://github.com/protocolbuffers/protobuf/releases/download/v<< parameters.version >>/protoc-<< parameters.version >>-linux-x86_64.zip > /tmp/protoc.zip
+      unzip -d /tmp /tmp/protoc.zip
+      chmod +x /tmp/bin/protoc
+      echo 'export PATH=/tmp/bin:$PATH' >> $BASH_ENV
+      source $BASH_ENV
+      make proto
 - run: git diff --exit-code

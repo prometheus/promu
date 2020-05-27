@@ -6,12 +6,17 @@ parameters:
     type: string
     description: Custom container image.
     default: circleci/golang
+  docker_version:
+    type: string
+    description: Docker version
+    default: 19.03.8
 
 docker:
 - image: << parameters.image >>
 
 steps:
-- setup_build_environment
+- setup_build_environment:
+    docker_version: << parameters.docker_version >>
 - publish_images:
     registry: docker.io
     organization: prom

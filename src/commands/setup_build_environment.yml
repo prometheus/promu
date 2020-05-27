@@ -1,10 +1,16 @@
 description: >
   Setup the environment for building the container images.
 
+parameters:
+  docker_version:
+    description: Docker version
+    type: string
+
 steps:
 - setup_environment
 - setup_remote_docker:
-    version: 18.06.0-ce
+    version: << parameters.docker_version >>
+- run: docker version
 - run: docker run --privileged linuxkit/binfmt:v0.7
 - attach_workspace:
     at: .

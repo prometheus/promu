@@ -15,8 +15,8 @@ workflows:
           orb-name: prometheus/prometheus
           publish-token-variable: CIRCLECI_API_TOKEN
           requires:
-          - orb-tools/lint
-          - orb-tools/pack
+            - orb-tools/lint
+            - orb-tools/pack
           filters:
             branches:
               only: master
@@ -26,7 +26,7 @@ workflows:
           checkout: false
           attach-workspace: true
           requires:
-          - orb-tools/pack
+            - orb-tools/pack
           filters:
             tags:
               only: /[0-9]+(\.[0-9]+){2}$/
