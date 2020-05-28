@@ -10,26 +10,40 @@ parameters:
     type: string
     description: Docker version
     default: 19.03.8
+  docker_hub_organization:
+    type: string
+    description: DockerHub organization
+    default: prom
+  quay_io_organization:
+    type: string
+    description: Quay.io organization
+    default: prometheus
 
 docker:
-- image: << parameters.image >>
+  - image: << parameters.image >>
 
 steps:
-- setup_build_environment:
-    docker_version: << parameters.docker_version >>
-- run: promu crossbuild tarballs
-- run: promu checksum .tarballs
-- run: promu release .tarballs
-- store_artifacts:
-    path: .tarballs
-    destination: releases
-- publish_release_images:
-    registry: docker.io
-    organization: prom
-    login_variable: DOCKER_LOGIN
-    password_variable: DOCKER_PASSWORD
-- publish_release_images:
-    registry: quay.io
-    organization: prometheus
-    login_variable: QUAY_LOGIN
-    password_variable: QUAY_PASSWORD
+  - setup_build_environment:
+      docker_version: << parameters.docker_version >>
+  - run: promu crossbuild tarballs
+  - run: promu checksum .tarballs
+  - run: promu release .tarballs
+  - store_artifacts:
+      path: .tarballs
+      destination: releases
+  - when:
+      conditions: << parameters.docker_hub_organization >>
+      steps:
+        - publish_release_images:
+            registry: docker.io
+            organization: << parameters.docker_hub_organization >>
+            login_variable: DOCKER_LOGIN
+            password_variable: DOCKER_PASSWORD
+  - when:
+      conditions: << parameters.quay_io_organization >>
+      steps:
+        - publish_release_images:
+            registry: quay.io
+            organization: << parameters.quay_io_organization >>
+            login_variable: QUAY_LOGIN
+            password_variable: QUAY_PASSWORD
