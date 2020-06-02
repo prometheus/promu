@@ -32,7 +32,7 @@ steps:
       path: .tarballs
       destination: releases
   - when:
-      conditions: << parameters.docker_hub_organization >>
+      condition: << parameters.docker_hub_organization >>
       steps:
         - publish_release_images:
             registry: docker.io
@@ -40,7 +40,7 @@ steps:
             login_variable: DOCKER_LOGIN
             password_variable: DOCKER_PASSWORD
   - when:
-      conditions: << parameters.quay_io_organization >>
+      condition: << parameters.quay_io_organization >>
       steps:
         - publish_release_images:
             registry: quay.io
