@@ -37,8 +37,10 @@ var (
 		"dragonfly/amd64",
 	}
 	defaultARMPlatforms = []string{
-		"linux/armv5", "linux/armv6", "linux/armv7", "linux/arm64", "freebsd/armv6", "freebsd/armv7",
-		"openbsd/armv7", "netbsd/armv6", "netbsd/armv7",
+		"freebsd/armv6", "freebsd/armv7", "freebsd/arm64",
+		"linux/armv5", "linux/armv6", "linux/armv7", "linux/arm64",
+		"netbsd/armv6", "netbsd/armv7", "netbsd/arm64",
+		"openbsd/armv7", "openbsd/arm64",
 	}
 	defaultPowerPCPlatforms = []string{
 		"aix/ppc64", "linux/ppc64", "linux/ppc64le",
