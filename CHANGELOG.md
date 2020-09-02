@@ -1,3 +1,7 @@
+## 0.6.1 / 2020-09-06
+
+* Fix cgo builds on illumos by avoiding static linking #192
+
 ## 0.6.0 / 2020-09-02
 
 * [CHANGE] Remove default build of darwin/386 #187
