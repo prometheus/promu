@@ -32,9 +32,13 @@ var (
 	dockerBuilderImageName = "quay.io/prometheus/golang-builder"
 
 	defaultMainPlatforms = []string{
-		"linux/amd64", "linux/386", "darwin/amd64", "darwin/386", "windows/amd64", "windows/386",
-		"freebsd/amd64", "freebsd/386", "openbsd/amd64", "openbsd/386", "netbsd/amd64", "netbsd/386",
+		"darwin/amd64",
 		"dragonfly/amd64",
+		"freebsd/amd64", "freebsd/386",
+		"linux/amd64", "linux/386",
+		"netbsd/amd64", "netbsd/386",
+		"openbsd/amd64", "openbsd/386",
+		"windows/amd64", "windows/386",
 	}
 	defaultARMPlatforms = []string{
 		"freebsd/armv6", "freebsd/armv7", "freebsd/arm64",
