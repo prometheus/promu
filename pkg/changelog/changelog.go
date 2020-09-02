@@ -30,14 +30,35 @@ import (
 type Kind int
 
 const (
-	kindChange = iota
+	kindSecurity = iota
+	kindChange
 	kindFeature
 	kindEnhancement
 	kindBugfix
 )
 
+// FromString turns a string into a Kind.
+func FromString(s string) (Kind, error) {
+	s = strings.ToUpper(s)
+	switch {
+	case strings.Contains(s, "SECURITY"):
+		return kindSecurity, nil
+	case strings.Contains(s, "CHANGE"):
+		return kindChange, nil
+	case strings.Contains(s, "FEATURE"):
+		return kindFeature, nil
+	case strings.Contains(s, "ENHANCEMENT"):
+		return kindEnhancement, nil
+	case strings.Contains(s, "BUGFIX") || strings.Contains(s, "BUG"):
+		return kindBugfix, nil
+	}
+	return 0, errors.New("Not found")
+}
+
 func (k Kind) String() string {
 	switch k {
+	case kindSecurity:
+		return "SECURITY"
 	case kindChange:
 		return "CHANGE"
 	case kindFeature:
@@ -50,18 +71,16 @@ func (k Kind) String() string {
 	return ""
 }
 
-// Kinds is a list of Kind which implements sort.Interface.
+// Kinds is a list of Kind.
 type Kinds []Kind
 
-func (k Kinds) Len() int           { return len(k) }
-func (k Kinds) Less(i, j int) bool { return k[i] < k[j] }
-func (k Kinds) Swap(i, j int)      { k[i], k[j] = k[j], k[i] }
-
-// ParseKinds converts a slash-separated list of Kind to a list of Kind.
-func ParseKinds(s string) Kinds {
+// ParseKinds converts a slice of strings to a slice of Kind.
+func ParseKinds(s []string) Kinds {
 	m := make(map[Kind]struct{})
-	for _, k := range strings.Split(s, "/") {
+	for _, k := range s {
 		switch k {
+		case "SECURITY":
+			m[kindSecurity] = struct{}{}
 		case "CHANGE":
 			m[kindChange] = struct{}{}
 		case "FEATURE":
@@ -77,7 +96,7 @@ func ParseKinds(s string) Kinds {
 	for k := range m {
 		kinds = append(kinds, k)
 	}
-	sort.Stable(kinds)
+	sort.SliceStable(kinds, func(i, j int) bool { return kinds[i] < kinds[j] })
 	return kinds
 }
 
@@ -89,6 +108,27 @@ func (k Kinds) String() string {
 	return strings.Join(s, "/")
 }
 
+// Before returns whether the receiver should sort before the other.
+func (k Kinds) Before(other Kinds) bool {
+	if len(other) == 0 {
+		return true
+	} else if len(k) == 0 {
+		return false
+	}
+
+	n := len(k)
+	if len(k) > len(other) {
+		n = len(other)
+	}
+	for j := 0; j < n; j++ {
+		if k[j] == other[j] {
+			continue
+		}
+		return k[j] < other[j]
+	}
+	return len(k) <= len(other)
+}
+
 // Change represents a change description.
 type Change struct {
 	Text  string
@@ -98,33 +138,8 @@ type Change struct {
 type Changes []Change
 
 func (c Changes) Sorted() error {
-	less := func(k1, k2 Kinds) bool {
-		if len(k1) == 0 {
-			if len(k2) == 0 {
-				return true
-			}
-			return false
-		}
-		if len(k2) == 0 {
-			return true
-		}
-
-		n := len(k1)
-		if len(k1) > len(k2) {
-			n = len(k2)
-		}
-		for j := 0; j < n; j++ {
-			if k1[j] == k2[j] {
-				continue
-			}
-			return k1[j] < k2[j]
-		}
-		return len(k1) <= len(k2)
-	}
-
 	for i := 0; i < len(c)-1; i++ {
-		k1, k2 := c[i].Kinds, c[i+1].Kinds
-		if !less(k1, k2) {
+		if !c[i].Kinds.Before(c[i+1].Kinds) {
 			return errors.Errorf("%q should be after %q", c[i].Text, c[i+1].Text)
 		}
 	}
@@ -181,7 +196,8 @@ func ReadEntry(r io.Reader, version string) (*Entry, error) {
 			}
 			m := reChange.FindStringSubmatch(line)
 			if len(m) > 1 {
-				entry.Changes = append(entry.Changes, Change{Text: line, Kinds: ParseKinds(m[1])})
+				kinds := strings.Split(m[1], "/")
+				entry.Changes = append(entry.Changes, Change{Text: line, Kinds: ParseKinds(kinds)})
 			}
 			lines = append(lines, line)
 		}

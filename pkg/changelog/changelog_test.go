@@ -247,33 +247,104 @@ This is the first stable release.
 
 func TestKinds(t *testing.T) {
 	for _, tc := range []struct {
-		in  string
+		in  []string
 		exp Kinds
 	}{
 		{
-			in:  "CHANGE",
+			in:  []string{"CHANGE"},
 			exp: Kinds{kindChange},
 		},
 		{
-			in:  "BUGFIX/CHANGE",
+			in:  []string{"BUGFIX", "CHANGE"},
 			exp: Kinds{kindChange, kindBugfix},
 		},
 		{
-			in:  "BUGFIX/BUGFIX",
+			in:  []string{"BUGFIX", "BUGFIX"},
 			exp: Kinds{kindBugfix},
 		},
 		{
-			in:  "BUGFIX/INVALID",
+			in:  []string{"BUGFIX", "INVALID"},
 			exp: Kinds{kindBugfix},
 		},
 		{
-			in: "INVALID",
+			in: []string{"INVALID"},
 		},
 	} {
 		t.Run("", func(t *testing.T) {
 			got := ParseKinds(tc.in)
 			if !reflect.DeepEqual(&tc.exp, &got) {
 				t.Fatalf("expected:\n%v\ngot:\n%v", tc.exp, got)
+			}
+		})
+	}
+}
+
+func TestKindsBefore(t *testing.T) {
+	for _, tc := range []struct {
+		first  Kinds
+		second Kinds
+
+		before bool
+	}{
+		{
+			first:  Kinds{},
+			before: true,
+		},
+		{
+			first:  Kinds{kindChange},
+			second: Kinds{},
+			before: true,
+		},
+		{
+			first:  Kinds{kindChange},
+			second: Kinds{kindChange},
+			before: true,
+		},
+		{
+			first:  Kinds{kindChange},
+			second: Kinds{kindBugfix},
+			before: true,
+		},
+		{
+			first:  Kinds{kindFeature},
+			second: Kinds{kindChange},
+			before: false,
+		},
+		{
+			first:  Kinds{kindChange},
+			second: Kinds{kindChange, kindBugfix},
+			before: true,
+		},
+		{
+			first:  Kinds{kindChange, kindBugfix},
+			second: Kinds{kindChange},
+			before: false,
+		},
+		{
+			first:  Kinds{kindChange, kindFeature, kindBugfix},
+			second: Kinds{kindChange, kindBugfix},
+			before: true,
+		},
+		{
+			first:  Kinds{kindChange, kindBugfix},
+			second: Kinds{kindChange, kindFeature, kindBugfix},
+			before: false,
+		},
+		{
+			first:  Kinds{kindChange, kindFeature, kindBugfix},
+			second: Kinds{kindChange, kindBugfix},
+			before: true,
+		},
+		{
+			first:  Kinds{},
+			second: Kinds{kindChange, kindBugfix},
+			before: false,
+		},
+	} {
+		t.Run("", func(t *testing.T) {
+			before := tc.first.Before(tc.second)
+			if before != tc.before {
+				t.Fatalf("expected %t but got: %t", tc.before, before)
 			}
 		})
 	}
