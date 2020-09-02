@@ -1,3 +1,11 @@
+## 0.6.0 / 2020-09-02
+
+* [CHANGE] Remove default build of darwin/386 #187
+* [FEATURE] Add 'check changelog' command. #168
+* [FEATURE] Support remotes other than "origin". #174
+* [ENHANCEMNT] Improved error handling when parsing CHANGELOG. #161
+* [ENANCEMENT] Support arm64 on BSDs. #186
+
 ## 0.5.0 / 2019-06-21
 
 * [CHANGE] Remove --broken from git describe. #145
