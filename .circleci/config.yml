@@ -23,14 +23,24 @@ jobs:
     - run: git diff --exit-code
 
   build:
-    executor: golang
+    machine:
+      image: ubuntu-1604:201903-01
     working_directory: /home/circleci/.go_workspace/src/github.com/prometheus/promu
 
     steps:
-    - setup_remote_docker
     - checkout
-    - run: make promu
-    - run: promu crossbuild -v
+    - run: go install .
+    - restore_cache:
+        keys:
+        - v01-gocache-{{ checksum "go.mod" }}
+        - v01-gocache-
+    - run: mkdir -p /home/circleci/.cache/go-build
+    - run: promu crossbuild -v --gocache-path /home/circleci/.cache/go-build
+    - run: du -sh /home/circleci/.cache/go-build
+    - save_cache:
+        key: v01-gocache-{{ checksum "go.mod" }}
+        paths:
+        - /home/circleci/.cache/go-build
     - persist_to_workspace:
         root: .
         paths:

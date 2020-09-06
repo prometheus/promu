@@ -84,14 +84,15 @@ var (
 			platformsFlagSet = true
 			return nil
 		}).Strings()
+	goCachePath = crossbuildcmd.Flag("gocache-path", "Path to a Go cache directory on the local machine").String()
 	// kingpin doesn't currently support using the crossbuild command and the
 	// crossbuild tarball subcommand at the same time, so we treat the
-	// tarball subcommand as an optional arg
+	// tarball subcommand as an optional arg.
 	tarballsSubcommand = crossbuildcmd.Arg("tarballs", "Optionally pass the string \"tarballs\" from cross-built binaries").String()
 )
 
 func runCrossbuild() {
-	//Check required configuration
+	// Check required configuration.
 	if len(strings.TrimSpace(config.Repository.Path)) == 0 {
 		log.Fatalf("missing required '%s' configuration", "repository.path")
 	}
@@ -155,7 +156,7 @@ func runCrossbuild() {
 	}
 
 	if !cgo {
-		// In non-CGO, use the base image without any crossbuild toolchain
+		// In non-CGO, use the base image without any crossbuild toolchain.
 		var allPlatforms []string
 		allPlatforms = append(allPlatforms, mainPlatforms[:]...)
 		allPlatforms = append(allPlatforms, armPlatforms[:]...)
@@ -164,7 +165,7 @@ func runCrossbuild() {
 		allPlatforms = append(allPlatforms, s390xPlatforms[:]...)
 
 		pg := &platformGroup{"base", dockerBaseBuilderImage, allPlatforms}
-		if err := pg.Build(repoPath); err != nil {
+		if err := pg.Build(repoPath, *goCachePath); err != nil {
 			fatal(errors.Wrapf(err, "The %s builder docker image exited unexpectedly", pg.Name))
 		}
 	} else {
@@ -175,7 +176,7 @@ func runCrossbuild() {
 			{"MIPS", dockerMIPSBuilderImage, mipsPlatforms},
 			{"s390x", dockerS390XBuilderImage, s390xPlatforms},
 		} {
-			if err := pg.Build(repoPath); err != nil {
+			if err := pg.Build(repoPath, *goCachePath); err != nil {
 				fatal(errors.Wrapf(err, "The %s builder docker image exited unexpectedly", pg.Name))
 			}
 		}
@@ -188,7 +189,9 @@ type platformGroup struct {
 	Platforms   []string
 }
 
-func (pg platformGroup) Build(repoPath string) error {
+const containerGoCacheDir = "/root/.cache/go-build"
+
+func (pg platformGroup) Build(repoPath string, goCachePath string) error {
 	platformsParam := strings.Join(pg.Platforms[:], " ")
 	if len(platformsParam) == 0 {
 		return nil
@@ -202,11 +205,22 @@ func (pg platformGroup) Build(repoPath string) error {
 	}
 
 	ctrName := "promu-crossbuild-" + pg.Name + strconv.FormatInt(time.Now().Unix(), 10)
-	err = sh.RunCommand("docker", "create", "-t",
+	args := []string{
+		"create", "-t",
 		"--name", ctrName,
+	}
+	if goCachePath != "" {
+		args = append(args,
+			"--env", fmt.Sprintf("GOCACHE=%s", containerGoCacheDir),
+			"-v", fmt.Sprintf("%s:%s", goCachePath, containerGoCacheDir),
+		)
+	}
+	args = append(args,
 		pg.DockerImage,
 		"-i", repoPath,
-		"-p", platformsParam)
+		"-p", platformsParam,
+	)
+	err = sh.RunCommand("docker", args...)
 	if err != nil {
 		return err
 	}
