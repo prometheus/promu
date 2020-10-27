@@ -15,9 +15,12 @@
 package cmd
 
 import (
+	"archive/zip"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/pkg/errors"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
@@ -83,4 +86,53 @@ func runTarball(binariesLocation string) {
 	tar := fmt.Sprintf("%s.tar.gz", name)
 	fmt.Println(" >  ", tar)
 	sh.RunCommand("tar", "zcf", filepath.Join(prefix, tar), "-C", tmpDir, name)
+
+	// Windows systems don't have tar available by default. Produce archives in
+	// the common zip format additionally.
+	if goos == "windows" {
+		archive := name + ".zip"
+		fmt.Println(" >  ", archive)
+		if err := createZIP(filepath.Join(prefix, archive), dir); err != nil {
+			fatal(fmt.Errorf("Could not create ZIP archive: %w", err))
+		}
+	}
+}
+
+// createZIP creates a ZIP archive at the given path containing the specified
+// directory.
+func createZIP(path, dir string) error {
+	f, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	w := zip.NewWriter(f)
+	defer w.Close()
+
+	prefix := filepath.Dir(dir)
+	walker := func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+
+		r, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		defer r.Close()
+
+		name := strings.TrimLeft(strings.TrimPrefix(path, prefix), "/")
+		f, err := w.Create(name)
+		if err != nil {
+			return err
+		}
+
+		_, err = io.Copy(f, r)
+		return err
+	}
+	return filepath.Walk(dir, walker)
 }

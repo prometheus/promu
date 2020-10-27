@@ -8,6 +8,7 @@ crossbuild:
     platforms:
         - linux/amd64
         - linux/386
+        - windows/amd64
 tarball:
     files:
         - README.md

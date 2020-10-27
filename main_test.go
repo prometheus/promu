@@ -181,6 +181,7 @@ func TestPromuCrossbuild(t *testing.T) {
 	errcheck(t, err, string(output))
 	assertFileExists(t, path.Join(promuExamplesCrossbuild, ".build", "linux-386", "crossbuild-example"))
 	assertFileExists(t, path.Join(promuExamplesCrossbuild, ".build", "linux-amd64", "crossbuild-example"))
+	assertFileExists(t, path.Join(promuExamplesCrossbuild, ".build", "windows-amd64", "crossbuild-example.exe"))
 
 	cmd = exec.Command(promuBinaryAbsPath, "crossbuild", "tarballs")
 	cmd.Dir = promuExamplesCrossbuild
@@ -189,4 +190,6 @@ func TestPromuCrossbuild(t *testing.T) {
 	errcheck(t, err, string(output))
 	assertFileExists(t, path.Join(promuExamplesCrossbuild, ".tarballs", "promu-0.1.linux-386.tar.gz"))
 	assertFileExists(t, path.Join(promuExamplesCrossbuild, ".tarballs", "promu-0.1.linux-amd64.tar.gz"))
+	assertFileExists(t, path.Join(promuExamplesCrossbuild, ".tarballs", "promu-0.1.windows-amd64.tar.gz"))
+	assertFileExists(t, path.Join(promuExamplesCrossbuild, ".tarballs", "promu-0.1.windows-amd64.zip"))
 }
