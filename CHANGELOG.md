@@ -1,6 +1,10 @@
+## 0.7.0 / 2020-10-28
+
+* [FEATURE] Produce ZIP archives for Windows releases #195
+
 ## 0.6.1 / 2020-09-06
 
-* Fix cgo builds on illumos by avoiding static linking #192
+* [BUGFIX] Fix cgo builds on illumos by avoiding static linking #192
 
 ## 0.6.0 / 2020-09-02
 
