@@ -14,8 +14,13 @@
 # The crossbuild command sets the PREFIX env var for each platform
 PREFIX                  ?= $(shell pwd)
 
+# Workaround to mimic promu's build behavior which usually handles the extension.
+ifeq ($(GOOS),windows)
+	EXTENSION = .exe
+endif
+
 build:
-	go build -o $(PREFIX)/crossbuild-example
+	go build -o $(PREFIX)/crossbuild-example$(EXTENSION)
 
 test:
 	go test
