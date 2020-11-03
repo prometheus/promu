@@ -1,4 +1,4 @@
-## 0.7.0 / 2020-10-28
+## 0.7.0 / 2020-11-03
 
 * [FEATURE] Produce ZIP archives for Windows releases #195
 
