@@ -5,6 +5,9 @@ go:
 repository:
     path: github.com/prometheus/promu
 build:
+    binaries:
+        - name: promu
+          path: .
     flags: -mod=vendor -a -tags 'netgo static_build'
     ldflags: |
         -s
