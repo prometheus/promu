@@ -43,6 +43,6 @@ steps:
     - run: echo "export DOCKERBUILD_CONTEXT=<< parameters.dockerbuild_context >>" >> $BASH_ENV
 - run: make docker DOCKER_REPO=<< parameters.registry >>/<< parameters.organization >>
 - run: docker images
-- run: docker login -u $<< parameters.login_variable >> -p $<< parameters.password_variable >> << parameters.registry >>
+- run: echo $<< parameters.password_variable >> | docker login -u $<< parameters.login_variable >> --password-stdin << parameters.registry >>
 - run: make docker-publish DOCKER_REPO=<< parameters.registry >>/<< parameters.organization >>
 - run: make docker-manifest DOCKER_REPO=<< parameters.registry >>/<< parameters.organization >>
