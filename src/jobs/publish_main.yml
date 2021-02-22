@@ -1,0 +1,43 @@
+description: >
+  Build and publish container images from the main branch.
+
+parameters:
+  image:
+    type: string
+    description: Custom container image.
+    default: circleci/golang
+  docker_version:
+    type: string
+    description: Docker version
+    default: 19.03.8
+  docker_hub_organization:
+    type: string
+    description: DockerHub organization
+    default: prom
+  quay_io_organization:
+    type: string
+    description: Quay.io organization
+    default: prometheus
+
+docker:
+  - image: << parameters.image >>
+
+steps:
+  - setup_build_environment:
+      docker_version: << parameters.docker_version >>
+  - when:
+      condition: << parameters.docker_hub_organization >>
+      steps:
+        - publish_images:
+            registry: docker.io
+            organization: << parameters.docker_hub_organization >>
+            login_variable: DOCKER_LOGIN
+            password_variable: DOCKER_PASSWORD
+  - when:
+      condition: << parameters.quay_io_organization >>
+      steps:
+        - publish_images:
+            registry: quay.io
+            organization: << parameters.quay_io_organization >>
+            login_variable: QUAY_LOGIN
+            password_variable: QUAY_PASSWORD
