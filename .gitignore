@@ -2,3 +2,4 @@
 .build
 .tarballs
 testoutput
+/vendor
