@@ -39,12 +39,13 @@ var (
 		"netbsd/amd64", "netbsd/386",
 		"openbsd/amd64", "openbsd/386",
 		"windows/amd64", "windows/386",
+		"illumos/amd64",
 	}
 	defaultARMPlatforms = []string{
 		"freebsd/armv6", "freebsd/armv7", "freebsd/arm64",
 		"linux/armv5", "linux/armv6", "linux/armv7", "linux/arm64",
 		"netbsd/armv6", "netbsd/armv7", "netbsd/arm64",
-		"openbsd/armv7", "openbsd/arm64",
+		"openbsd/armv7", "openbsd/arm64", "darwin/arm64",
 	}
 	defaultPowerPCPlatforms = []string{
 		"aix/ppc64", "linux/ppc64", "linux/ppc64le",
