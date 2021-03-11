@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -57,12 +58,6 @@ var (
 	defaultS390Platforms = []string{
 		"linux/s390x",
 	}
-	armPlatformsAliases = map[string][]string{
-		"linux/arm":   {"linux/armv5", "linux/armv6", "linux/armv7"},
-		"freebsd/arm": {"freebsd/armv6", "freebsd/armv7"},
-		"openbsd/arm": {"openbsd/armv7"},
-		"netbsd/arm":  {"netbsd/armv6", "netbsd/armv7"},
-	}
 )
 
 var (
@@ -80,7 +75,7 @@ var (
 			return nil
 		}).String()
 	platformsFlagSet bool
-	platformsFlag    = crossbuildcmd.Flag("platforms", "Space separated list of platforms to build").Short('p').
+	platformsFlag    = crossbuildcmd.Flag("platforms", "Regexp match platforms to build, may be used multiple times.").Short('p').
 				PreAction(func(c *kingpin.ParseContext) error {
 			platformsFlagSet = true
 			return nil
@@ -132,21 +127,20 @@ func runCrossbuild() {
 		dockerS390XBuilderImage   = fmt.Sprintf("%s:%s-s390x", dockerBuilderImageName, goVersion)
 	)
 
+	var filteredPlatforms []string
 	for _, platform := range platforms {
-		switch {
-		case stringInSlice(platform, defaultMainPlatforms):
-			mainPlatforms = append(mainPlatforms, platform)
-		case stringInSlice(platform, defaultARMPlatforms):
-			armPlatforms = append(armPlatforms, platform)
-		case stringInSlice(platform, defaultPowerPCPlatforms):
-			powerPCPlatforms = append(powerPCPlatforms, platform)
-		case stringInSlice(platform, defaultMIPSPlatforms):
-			mipsPlatforms = append(mipsPlatforms, platform)
-		case stringInSlice(platform, defaultS390Platforms):
-			s390xPlatforms = append(s390xPlatforms, platform)
-		case stringInMapKeys(platform, armPlatformsAliases):
-			armPlatforms = append(armPlatforms, armPlatformsAliases[platform]...)
-		default:
+		p := regexp.MustCompile(platform)
+		if filteredPlatforms = inSliceRE(p, defaultMainPlatforms); len(filteredPlatforms) > 0 {
+			mainPlatforms = append(mainPlatforms, filteredPlatforms...)
+		} else if filteredPlatforms = inSliceRE(p, defaultARMPlatforms); len(filteredPlatforms) > 0 {
+			armPlatforms = append(armPlatforms, filteredPlatforms...)
+		} else if filteredPlatforms = inSliceRE(p, defaultPowerPCPlatforms); len(filteredPlatforms) > 0 {
+			powerPCPlatforms = append(powerPCPlatforms, filteredPlatforms...)
+		} else if filteredPlatforms = inSliceRE(p, defaultMIPSPlatforms); len(filteredPlatforms) > 0 {
+			mipsPlatforms = append(mipsPlatforms, filteredPlatforms...)
+		} else if filteredPlatforms = inSliceRE(p, defaultS390Platforms); len(filteredPlatforms) > 0 {
+			s390xPlatforms = append(s390xPlatforms, filteredPlatforms...)
+		} else {
 			unknownPlatforms = append(unknownPlatforms, platform)
 		}
 	}
