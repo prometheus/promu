@@ -1,3 +1,9 @@
+## 0.8.0 / 2021-03-11
+
+Note: The default build now requires Go 1.16.
+
+* [FEATURE] Add `darwin/arm64` and `illumos/amd64` to the default build #201
+
 ## 0.7.0 / 2020-11-03
 
 * [FEATURE] Produce ZIP archives for Windows releases #195
