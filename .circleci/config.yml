@@ -14,24 +14,26 @@ jobs:
     steps:
     - setup_remote_docker
     - checkout
-    - run: make promu
-    - run: make check_license style unused lint test build
+    - run: go build -o promu-intermediate
+    - run: make check_license style unused lint test build PROMU=./promu-intermediate
     - store_artifacts:
         path: promu
         destination: /build/promu
-    - run: rm -v promu
+    - run: rm -v promu promu-intermediate
     - run: git diff --exit-code
 
   build:
     executor: golang
+    environment:
+        PROMU: ./promu-intermediate
     working_directory: /home/circleci/.go_workspace/src/github.com/prometheus/promu
 
     steps:
     - setup_remote_docker:
         version: 18.09.3
     - checkout
-    - run: make promu
-    - run: promu crossbuild -v
+    - run: go build -o promu-intermediate
+    - run: ./promu-intermediate crossbuild -v
     - persist_to_workspace:
         root: .
         paths:
@@ -42,15 +44,17 @@ jobs:
 
   release_tags:
     executor: golang
+    environment:
+        PROMU: ./promu-intermediate
 
     steps:
     - checkout
     - attach_workspace:
         at: .
-    - run: make promu
-    - run: promu crossbuild tarballs
-    - run: promu checksum .tarballs
-    - run: promu release .tarballs
+    - run: go build -o promu-intermediate
+    - run: ./promu-intermediate crossbuild tarballs
+    - run: ./promu-intermediate checksum .tarballs
+    - run: ./promu-intermediate release .tarballs
     - store_artifacts:
         path: .tarballs
         destination: releases
