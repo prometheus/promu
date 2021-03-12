@@ -1,3 +1,11 @@
+## 0.8.1 / 2021-03-12
+
+This release is cut to publish `darwin/arm64` and `illumos/amd64` binaries of
+promu.
+
+* [ENHANCEMENT] Promu is now built from its default branch instead of a released
+  binary #205
+
 ## 0.8.0 / 2021-03-11
 
 Note: The default build now requires Go 1.16.
