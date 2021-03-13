@@ -21,6 +21,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/prometheus/promu/pkg/repository"
@@ -239,6 +240,16 @@ func stringInSlice(needle string, haystack []string) bool {
 		}
 	}
 	return false
+}
+
+func inSliceRE(needle *regexp.Regexp, haystack []string) []string {
+	var list []string
+	for _, hay := range haystack {
+		if needle.MatchString(hay) {
+			list = append(list, hay)
+		}
+	}
+	return list
 }
 
 func stringInMapKeys(needle string, haystack map[string][]string) bool {
