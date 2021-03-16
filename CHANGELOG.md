@@ -1,3 +1,10 @@
+## 0.9.0 / 2021/03/16
+
+Note: promu crossbuild --platform flag is now a regexp. To
+      use multiple options, the flag can be repeated.
+
+* [CHANGE] Use regexp for crossbuild platforms #204
+
 ## 0.8.1 / 2021-03-12
 
 This release is cut to publish `darwin/arm64` and `illumos/amd64` binaries of
