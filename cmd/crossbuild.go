@@ -187,6 +187,10 @@ type platformGroup struct {
 }
 
 func (pg platformGroup) Build(repoPath string) error {
+	err := sh.RunCommand("docker", "pull", pg.DockerImage)
+	if err != nil {
+		return err
+	}
 	var wg sync.WaitGroup
 	wg.Add(*parallelFlag)
 	atomicErr := atomic.NewError(nil)
