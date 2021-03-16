@@ -33,7 +33,7 @@ jobs:
         version: 18.09.3
     - checkout
     - run: go build -o promu-intermediate
-    - run: ./promu-intermediate crossbuild -v
+    - run: ./promu-intermediate crossbuild -v --parallelism 2
     - persist_to_workspace:
         root: .
         paths:
