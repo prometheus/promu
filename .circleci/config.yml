@@ -29,8 +29,7 @@ jobs:
     working_directory: /home/circleci/.go_workspace/src/github.com/prometheus/promu
 
     steps:
-    - setup_remote_docker:
-        version: 18.09.3
+    - setup_remote_docker
     - checkout
     - run: go build -o promu-intermediate
     - run: ./promu-intermediate crossbuild -v --parallelism 2
