@@ -21,9 +21,11 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/pkg/errors"
+	"go.uber.org/atomic"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 
 	"github.com/prometheus/promu/util/sh"
@@ -68,8 +70,9 @@ var (
 			crossBuildCgoFlagSet = true
 			return nil
 		}).Default("false").Bool()
-	goFlagSet bool
-	goFlag    = crossbuildcmd.Flag("go", "Golang builder version to use (e.g. 1.11)").
+	parallelFlag = crossbuildcmd.Flag("parallelism", "How many builds to run in parallel").Default("1").Int()
+	goFlagSet    bool
+	goFlag       = crossbuildcmd.Flag("go", "Golang builder version to use (e.g. 1.11)").
 			PreAction(func(c *kingpin.ParseContext) error {
 			goFlagSet = true
 			return nil
@@ -184,7 +187,32 @@ type platformGroup struct {
 }
 
 func (pg platformGroup) Build(repoPath string) error {
-	platformsParam := strings.Join(pg.Platforms[:], " ")
+	err := sh.RunCommand("docker", "pull", pg.DockerImage)
+	if err != nil {
+		return err
+	}
+	var wg sync.WaitGroup
+	wg.Add(*parallelFlag)
+	atomicErr := atomic.NewError(nil)
+	for p := 0; p < *parallelFlag; p++ {
+		go func(p int) {
+			defer wg.Done()
+			if err := pg.buildThread(repoPath, p); err != nil {
+				atomicErr.Store(err)
+			}
+		}(p)
+	}
+	wg.Wait()
+	return atomicErr.Load()
+}
+
+func (pg platformGroup) buildThread(repoPath string, p int) error {
+	minb := p * len(pg.Platforms) / *parallelFlag
+	maxb := (p + 1) * len(pg.Platforms) / *parallelFlag
+	if maxb > len(pg.Platforms) {
+		maxb = len(pg.Platforms)
+	}
+	platformsParam := strings.Join(pg.Platforms[minb:maxb], " ")
 	if len(platformsParam) == 0 {
 		return nil
 	}
@@ -196,7 +224,7 @@ func (pg platformGroup) Build(repoPath string) error {
 		return errors.Wrapf(err, "couldn't get current working directory")
 	}
 
-	ctrName := "promu-crossbuild-" + pg.Name + strconv.FormatInt(time.Now().Unix(), 10)
+	ctrName := "promu-crossbuild-" + pg.Name + strconv.FormatInt(time.Now().Unix(), 10) + "-" + strconv.Itoa(p)
 	err = sh.RunCommand("docker", "create", "-t",
 		"--name", ctrName,
 		pg.DockerImage,
