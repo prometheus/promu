@@ -1,0 +1,21 @@
+description: >
+  Cross-build and store the binaries for a specific platform regexp.
+
+machine:
+  enabled: true
+
+parameters:
+  platform:
+    type: string
+    description: A promu platform regexp to build.
+
+steps:
+- setup_environment
+- run: promu crossbuild -v -p '<< parameters.platform >>'
+- persist_to_workspace:
+    root: .
+    paths:
+    - .build
+- store_artifacts:
+    path: .build
+    destination: /build
