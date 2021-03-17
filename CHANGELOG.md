@@ -1,3 +1,7 @@
+## 0.10.0 / 2021-03-17
+
+* [FEATURE] Add parallel crossbuils #208
+
 ## 0.9.0 / 2021-03-16
 
 Note: promu crossbuild --platform flag is now a regexp. To
