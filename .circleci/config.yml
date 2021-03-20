@@ -27,12 +27,13 @@ jobs:
     environment:
         PROMU: ./promu-intermediate
     working_directory: /home/circleci/.go_workspace/src/github.com/prometheus/promu
+    parallelism: 5
 
     steps:
     - setup_remote_docker
     - checkout
     - run: go build -o promu-intermediate
-    - run: ./promu-intermediate crossbuild -v --parallelism 2
+    - run: ./promu-intermediate crossbuild -v --parallelism $CIRCLE_NODE_TOTAL --parallelism-thread $CIRCLE_NODE_INDEX
     - persist_to_workspace:
         root: .
         paths:

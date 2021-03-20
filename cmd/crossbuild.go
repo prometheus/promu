@@ -70,10 +70,11 @@ var (
 			crossBuildCgoFlagSet = true
 			return nil
 		}).Default("false").Bool()
-	parallelFlag = crossbuildcmd.Flag("parallelism", "How many builds to run in parallel").Default("1").Int()
-	goFlagSet    bool
-	goFlag       = crossbuildcmd.Flag("go", "Golang builder version to use (e.g. 1.11)").
-			PreAction(func(c *kingpin.ParseContext) error {
+	parallelFlag       = crossbuildcmd.Flag("parallelism", "How many builds to run in parallel").Default("1").Int()
+	parallelThreadFlag = crossbuildcmd.Flag("parallelism-thread", "Index of the parallel build").Default("-1").Int()
+	goFlagSet          bool
+	goFlag             = crossbuildcmd.Flag("go", "Golang builder version to use (e.g. 1.11)").
+				PreAction(func(c *kingpin.ParseContext) error {
 			goFlagSet = true
 			return nil
 		}).String()
@@ -187,6 +188,9 @@ type platformGroup struct {
 }
 
 func (pg platformGroup) Build(repoPath string) error {
+	if *parallelThreadFlag != -1 {
+		return pg.buildThread(repoPath, *parallelThreadFlag)
+	}
 	err := sh.RunCommand("docker", "pull", pg.DockerImage)
 	if err != nil {
 		return err
