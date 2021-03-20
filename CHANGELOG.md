@@ -1,6 +1,10 @@
+## 0.11.0 / 2021-03-20
+
+* [FEATURE] Add the ability to run parallel build threads independently #212
+
 ## 0.10.0 / 2021-03-17
 
-* [FEATURE] Add parallel crossbuils #208
+* [FEATURE] Add parallel crossbuilds #208
 
 ## 0.9.0 / 2021-03-16
 
