@@ -4,9 +4,17 @@ description: >
 machine:
   enabled: true
 
+parameters:
+  parallelism:
+    type: integer
+    description: The number of builds to run in parallel.
+    default: 3
+
+parallelism: << parameters.parallelism >>
+
 steps:
 - setup_environment
-- run: promu crossbuild -v
+- run: promu crossbuild -v --parallelism $CIRCLE_NODE_TOTAL --parallelism-thread $CIRCLE_NODE_INDEX
 - persist_to_workspace:
     root: .
     paths:
