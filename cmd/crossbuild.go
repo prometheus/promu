@@ -19,6 +19,7 @@ import (
 	"log"
 	"os"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -149,6 +150,14 @@ func runCrossbuild() {
 		}
 	}
 
+	// Remove duplicates, e.g. if linux/arm and linux/arm64 is specified, there
+	// would be linux/arm64 twice in the platforms without this.
+	mainPlatforms = removeDuplicates(mainPlatforms)
+	armPlatforms = removeDuplicates(armPlatforms)
+	powerPCPlatforms = removeDuplicates(powerPCPlatforms)
+	mipsPlatforms = removeDuplicates(mipsPlatforms)
+	s390xPlatforms = removeDuplicates(s390xPlatforms)
+
 	if len(unknownPlatforms) > 0 {
 		warn(errors.Errorf("unknown/unhandled platforms: %s", unknownPlatforms))
 	}
@@ -257,4 +266,17 @@ func (pg platformGroup) buildThread(repoPath string, p int) error {
 		return err
 	}
 	return sh.RunCommand("docker", "rm", "-f", ctrName)
+}
+
+func removeDuplicates(strings []string) []string {
+	keys := map[string]struct{}{}
+	list := []string{}
+	for _, s := range strings {
+		if _, ok := keys[s]; !ok {
+			list = append(list, s)
+			keys[s] = struct{}{}
+		}
+	}
+	sort.Strings(list)
+	return list
 }
