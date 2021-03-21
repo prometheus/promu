@@ -1,3 +1,8 @@
+## 0.11.1 / 2021-03-20
+
+* [BUGFIX] Deduplicate platforms when two regexes match the same platform #214
+* [BUGFIX] Regexes are evaluated against all archs, and don't stop at the first match #214
+
 ## 0.11.0 / 2021-03-20
 
 * [FEATURE] Add the ability to run parallel build threads independently #212

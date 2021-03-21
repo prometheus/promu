@@ -19,6 +19,7 @@ import (
 	"log"
 	"os"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -133,21 +134,40 @@ func runCrossbuild() {
 
 	var filteredPlatforms []string
 	for _, platform := range platforms {
+		var found bool
 		p := regexp.MustCompile(platform)
 		if filteredPlatforms = inSliceRE(p, defaultMainPlatforms); len(filteredPlatforms) > 0 {
+			found = true
 			mainPlatforms = append(mainPlatforms, filteredPlatforms...)
-		} else if filteredPlatforms = inSliceRE(p, defaultARMPlatforms); len(filteredPlatforms) > 0 {
+		}
+		if filteredPlatforms = inSliceRE(p, defaultARMPlatforms); len(filteredPlatforms) > 0 {
+			found = true
 			armPlatforms = append(armPlatforms, filteredPlatforms...)
-		} else if filteredPlatforms = inSliceRE(p, defaultPowerPCPlatforms); len(filteredPlatforms) > 0 {
+		}
+		if filteredPlatforms = inSliceRE(p, defaultPowerPCPlatforms); len(filteredPlatforms) > 0 {
+			found = true
 			powerPCPlatforms = append(powerPCPlatforms, filteredPlatforms...)
-		} else if filteredPlatforms = inSliceRE(p, defaultMIPSPlatforms); len(filteredPlatforms) > 0 {
+		}
+		if filteredPlatforms = inSliceRE(p, defaultMIPSPlatforms); len(filteredPlatforms) > 0 {
+			found = true
 			mipsPlatforms = append(mipsPlatforms, filteredPlatforms...)
-		} else if filteredPlatforms = inSliceRE(p, defaultS390Platforms); len(filteredPlatforms) > 0 {
+		}
+		if filteredPlatforms = inSliceRE(p, defaultS390Platforms); len(filteredPlatforms) > 0 {
+			found = true
 			s390xPlatforms = append(s390xPlatforms, filteredPlatforms...)
-		} else {
+		}
+		if !found {
 			unknownPlatforms = append(unknownPlatforms, platform)
 		}
 	}
+
+	// Remove duplicates, e.g. if linux/arm and linux/arm64 is specified, there
+	// would be linux/arm64 twice in the platforms without this.
+	mainPlatforms = removeDuplicates(mainPlatforms)
+	armPlatforms = removeDuplicates(armPlatforms)
+	powerPCPlatforms = removeDuplicates(powerPCPlatforms)
+	mipsPlatforms = removeDuplicates(mipsPlatforms)
+	s390xPlatforms = removeDuplicates(s390xPlatforms)
 
 	if len(unknownPlatforms) > 0 {
 		warn(errors.Errorf("unknown/unhandled platforms: %s", unknownPlatforms))
@@ -257,4 +277,17 @@ func (pg platformGroup) buildThread(repoPath string, p int) error {
 		return err
 	}
 	return sh.RunCommand("docker", "rm", "-f", ctrName)
+}
+
+func removeDuplicates(strings []string) []string {
+	keys := map[string]struct{}{}
+	list := []string{}
+	for _, s := range strings {
+		if _, ok := keys[s]; !ok {
+			list = append(list, s)
+			keys[s] = struct{}{}
+		}
+	}
+	sort.Strings(list)
+	return list
 }
