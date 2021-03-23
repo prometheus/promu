@@ -33,8 +33,6 @@ import (
 )
 
 var (
-	dockerBuilderImageName = "quay.io/prometheus/golang-builder"
-
 	defaultMainPlatforms = []string{
 		"darwin/amd64",
 		"dragonfly/amd64",
@@ -63,6 +61,8 @@ var (
 	}
 )
 
+const defaultDockerImage = "quay.io/prometheus/golang-builder"
+
 var (
 	crossbuildcmd        = app.Command("crossbuild", "Crossbuild a Go project using Golang builder Docker images")
 	crossBuildCgoFlagSet bool
@@ -71,6 +71,7 @@ var (
 			crossBuildCgoFlagSet = true
 			return nil
 		}).Default("false").Bool()
+	dockerImageFlag    = crossbuildcmd.Flag("docker-image", "The docker image to build with").Default(defaultDockerImage).String()
 	parallelFlag       = crossbuildcmd.Flag("parallelism", "How many builds to run in parallel").Default("1").Int()
 	parallelThreadFlag = crossbuildcmd.Flag("parallelism-thread", "Index of the parallel build").Default("-1").Int()
 	goFlagSet          bool
@@ -124,12 +125,12 @@ func runCrossbuild() {
 		repoPath  = config.Repository.Path
 		platforms = config.Crossbuild.Platforms
 
-		dockerBaseBuilderImage    = fmt.Sprintf("%s:%s-base", dockerBuilderImageName, goVersion)
-		dockerMainBuilderImage    = fmt.Sprintf("%s:%s-main", dockerBuilderImageName, goVersion)
-		dockerARMBuilderImage     = fmt.Sprintf("%s:%s-arm", dockerBuilderImageName, goVersion)
-		dockerPowerPCBuilderImage = fmt.Sprintf("%s:%s-powerpc", dockerBuilderImageName, goVersion)
-		dockerMIPSBuilderImage    = fmt.Sprintf("%s:%s-mips", dockerBuilderImageName, goVersion)
-		dockerS390XBuilderImage   = fmt.Sprintf("%s:%s-s390x", dockerBuilderImageName, goVersion)
+		dockerBaseBuilderImage    = fmt.Sprintf("%s:%s-base", *dockerImageFlag, goVersion)
+		dockerMainBuilderImage    = fmt.Sprintf("%s:%s-main", *dockerImageFlag, goVersion)
+		dockerARMBuilderImage     = fmt.Sprintf("%s:%s-arm", *dockerImageFlag, goVersion)
+		dockerPowerPCBuilderImage = fmt.Sprintf("%s:%s-powerpc", *dockerImageFlag, goVersion)
+		dockerMIPSBuilderImage    = fmt.Sprintf("%s:%s-mips", *dockerImageFlag, goVersion)
+		dockerS390XBuilderImage   = fmt.Sprintf("%s:%s-s390x", *dockerImageFlag, goVersion)
 	)
 
 	var filteredPlatforms []string
@@ -211,9 +212,11 @@ func (pg platformGroup) Build(repoPath string) error {
 	if *parallelThreadFlag != -1 {
 		return pg.buildThread(repoPath, *parallelThreadFlag)
 	}
-	err := sh.RunCommand("docker", "pull", pg.DockerImage)
-	if err != nil {
-		return err
+	if pg.DockerImage == defaultDockerImage {
+		err := sh.RunCommand("docker", "pull", pg.DockerImage)
+		if err != nil {
+			return err
+		}
 	}
 	var wg sync.WaitGroup
 	wg.Add(*parallelFlag)
