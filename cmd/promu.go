@@ -74,12 +74,7 @@ func NewConfig() *Config {
 	config.Build.Binaries = []Binary{{Name: projInfo.Name, Path: "."}}
 	config.Build.Prefix = "."
 	config.Build.Static = true
-	platforms := defaultMainPlatforms
-	platforms = append(platforms, defaultARMPlatforms...)
-	platforms = append(platforms, defaultPowerPCPlatforms...)
-	platforms = append(platforms, defaultMIPSPlatforms...)
-	platforms = append(platforms, defaultS390Platforms...)
-	config.Crossbuild.Platforms = platforms
+	config.Crossbuild.Platforms = defaultPlatforms
 	config.Tarball.Prefix = "."
 	config.Go.Version = "1.12"
 	config.Go.CGo = false

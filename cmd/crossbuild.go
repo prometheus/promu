@@ -35,31 +35,41 @@ import (
 var (
 	dockerBuilderImageName = "quay.io/prometheus/golang-builder"
 
-	defaultMainPlatforms = []string{
+	defaultPlatforms = []string{
+		"aix/ppc64",
 		"darwin/amd64",
+		"darwin/arm64",
 		"dragonfly/amd64",
-		"freebsd/amd64", "freebsd/386",
-		"linux/amd64", "linux/386",
-		"netbsd/amd64", "netbsd/386",
-		"openbsd/amd64", "openbsd/386",
-		"windows/amd64", "windows/386",
+		"freebsd/386",
+		"freebsd/amd64",
+		"freebsd/arm64",
+		"freebsd/armv6",
+		"freebsd/armv7",
 		"illumos/amd64",
-	}
-	defaultARMPlatforms = []string{
-		"freebsd/armv6", "freebsd/armv7", "freebsd/arm64",
-		"linux/armv5", "linux/armv6", "linux/armv7", "linux/arm64",
-		"netbsd/armv6", "netbsd/armv7", "netbsd/arm64",
-		"openbsd/armv7", "openbsd/arm64", "darwin/arm64",
-	}
-	defaultPowerPCPlatforms = []string{
-		"aix/ppc64", "linux/ppc64", "linux/ppc64le",
-	}
-	defaultMIPSPlatforms = []string{
-		"linux/mips", "linux/mipsle",
-		"linux/mips64", "linux/mips64le",
-	}
-	defaultS390Platforms = []string{
+		"linux/386",
+		"linux/amd64",
+		"linux/arm64",
+		"linux/armv5",
+		"linux/armv6",
+		"linux/armv7",
+		"linux/mips",
+		"linux/mips64",
+		"linux/mips64le",
+		"linux/mipsle",
+		"linux/ppc64",
+		"linux/ppc64le",
 		"linux/s390x",
+		"netbsd/386",
+		"netbsd/amd64",
+		"netbsd/arm64",
+		"netbsd/armv6",
+		"netbsd/armv7",
+		"openbsd/386",
+		"openbsd/amd64",
+		"openbsd/arm64",
+		"openbsd/armv7",
+		"windows/386",
+		"windows/amd64",
 	}
 )
 
@@ -112,11 +122,7 @@ func runCrossbuild() {
 	}
 
 	var (
-		mainPlatforms    []string
-		armPlatforms     []string
-		powerPCPlatforms []string
-		mipsPlatforms    []string
-		s390xPlatforms   []string
+		allPlatforms     []string
 		unknownPlatforms []string
 
 		cgo       = config.Go.CGo
@@ -124,79 +130,39 @@ func runCrossbuild() {
 		repoPath  = config.Repository.Path
 		platforms = config.Crossbuild.Platforms
 
-		dockerBaseBuilderImage    = fmt.Sprintf("%s:%s-base", dockerBuilderImageName, goVersion)
-		dockerMainBuilderImage    = fmt.Sprintf("%s:%s-main", dockerBuilderImageName, goVersion)
-		dockerARMBuilderImage     = fmt.Sprintf("%s:%s-arm", dockerBuilderImageName, goVersion)
-		dockerPowerPCBuilderImage = fmt.Sprintf("%s:%s-powerpc", dockerBuilderImageName, goVersion)
-		dockerMIPSBuilderImage    = fmt.Sprintf("%s:%s-mips", dockerBuilderImageName, goVersion)
-		dockerS390XBuilderImage   = fmt.Sprintf("%s:%s-s390x", dockerBuilderImageName, goVersion)
+		dockerBaseBuilderImage = fmt.Sprintf("%s:%s-base", dockerBuilderImageName, goVersion)
+		dockerMainBuilderImage = fmt.Sprintf("%s:%s-main", dockerBuilderImageName, goVersion)
 	)
 
 	var filteredPlatforms []string
 	for _, platform := range platforms {
-		var found bool
 		p := regexp.MustCompile(platform)
-		if filteredPlatforms = inSliceRE(p, defaultMainPlatforms); len(filteredPlatforms) > 0 {
-			found = true
-			mainPlatforms = append(mainPlatforms, filteredPlatforms...)
-		}
-		if filteredPlatforms = inSliceRE(p, defaultARMPlatforms); len(filteredPlatforms) > 0 {
-			found = true
-			armPlatforms = append(armPlatforms, filteredPlatforms...)
-		}
-		if filteredPlatforms = inSliceRE(p, defaultPowerPCPlatforms); len(filteredPlatforms) > 0 {
-			found = true
-			powerPCPlatforms = append(powerPCPlatforms, filteredPlatforms...)
-		}
-		if filteredPlatforms = inSliceRE(p, defaultMIPSPlatforms); len(filteredPlatforms) > 0 {
-			found = true
-			mipsPlatforms = append(mipsPlatforms, filteredPlatforms...)
-		}
-		if filteredPlatforms = inSliceRE(p, defaultS390Platforms); len(filteredPlatforms) > 0 {
-			found = true
-			s390xPlatforms = append(s390xPlatforms, filteredPlatforms...)
-		}
-		if !found {
+		if filteredPlatforms = inSliceRE(p, defaultPlatforms); len(filteredPlatforms) > 0 {
+			allPlatforms = append(allPlatforms, filteredPlatforms...)
+		} else {
 			unknownPlatforms = append(unknownPlatforms, platform)
 		}
 	}
 
 	// Remove duplicates, e.g. if linux/arm and linux/arm64 is specified, there
 	// would be linux/arm64 twice in the platforms without this.
-	mainPlatforms = removeDuplicates(mainPlatforms)
-	armPlatforms = removeDuplicates(armPlatforms)
-	powerPCPlatforms = removeDuplicates(powerPCPlatforms)
-	mipsPlatforms = removeDuplicates(mipsPlatforms)
-	s390xPlatforms = removeDuplicates(s390xPlatforms)
+	allPlatforms = removeDuplicates(allPlatforms)
 
 	if len(unknownPlatforms) > 0 {
 		warn(errors.Errorf("unknown/unhandled platforms: %s", unknownPlatforms))
 	}
 
 	if !cgo {
-		// In non-CGO, use the base image without any crossbuild toolchain
-		var allPlatforms []string
-		allPlatforms = append(allPlatforms, mainPlatforms[:]...)
-		allPlatforms = append(allPlatforms, armPlatforms[:]...)
-		allPlatforms = append(allPlatforms, powerPCPlatforms[:]...)
-		allPlatforms = append(allPlatforms, mipsPlatforms[:]...)
-		allPlatforms = append(allPlatforms, s390xPlatforms[:]...)
-
+		// In non-CGO, use the `base` image without any crossbuild toolchain.
 		pg := &platformGroup{"base", dockerBaseBuilderImage, allPlatforms}
 		if err := pg.Build(repoPath); err != nil {
 			fatal(errors.Wrapf(err, "The %s builder docker image exited unexpectedly", pg.Name))
 		}
 	} else {
-		for _, pg := range []platformGroup{
-			{"main", dockerMainBuilderImage, mainPlatforms},
-			{"ARM", dockerARMBuilderImage, armPlatforms},
-			{"PowerPC", dockerPowerPCBuilderImage, powerPCPlatforms},
-			{"MIPS", dockerMIPSBuilderImage, mipsPlatforms},
-			{"s390x", dockerS390XBuilderImage, s390xPlatforms},
-		} {
-			if err := pg.Build(repoPath); err != nil {
-				fatal(errors.Wrapf(err, "The %s builder docker image exited unexpectedly", pg.Name))
-			}
+		// In CGO, use the `main` image with crossbuild toolchain.
+		pg := &platformGroup{"main", dockerMainBuilderImage, allPlatforms}
+		if err := pg.Build(repoPath); err != nil {
+			fatal(errors.Wrapf(err, "The %s builder docker image exited unexpectedly", pg.Name))
 		}
 	}
 }
