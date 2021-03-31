@@ -1,82 +1,75 @@
----
 version: 2.1
-
 executors:
   # Whenever the Go version is updated here, .promu.yml should also be updated.
   golang:
     docker:
-    - image: circleci/golang:1.16
-
+      - image: circleci/golang:1.16
 jobs:
   test:
     executor: golang
-
     steps:
-    - setup_remote_docker
-    - checkout
-    - run: go build -o promu-intermediate
-    - run: make check_license style unused lint test build PROMU=./promu-intermediate
-    - store_artifacts:
-        path: promu
-        destination: /build/promu
-    - run: rm -v promu promu-intermediate
-    - run: git diff --exit-code
-
+      - setup_remote_docker
+      - checkout
+      - run: go build -o promu-intermediate
+      - run: make check_license style unused lint test build PROMU=./promu-intermediate
+      - store_artifacts:
+          path: promu
+          destination: /build/promu
+      - run: rm -v promu promu-intermediate
+      - run: git diff --exit-code
   build:
     executor: golang
     environment:
-        PROMU: ./promu-intermediate
+      PROMU: ./promu-intermediate
     working_directory: /home/circleci/.go_workspace/src/github.com/prometheus/promu
     parallelism: 5
-
     steps:
-    - setup_remote_docker
-    - checkout
-    - run: go build -o promu-intermediate
-    - run: ./promu-intermediate crossbuild -v --parallelism $CIRCLE_NODE_TOTAL --parallelism-thread $CIRCLE_NODE_INDEX
-    - persist_to_workspace:
-        root: .
-        paths:
-        - .build
-    - store_artifacts:
-        path: .build
-        destination: /build
-
+      - setup_remote_docker
+      - checkout
+      - run: go build -o promu-intermediate
+      - run: ./promu-intermediate crossbuild -v --parallelism $CIRCLE_NODE_TOTAL --parallelism-thread $CIRCLE_NODE_INDEX
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .build
+      - store_artifacts:
+          path: .build
+          destination: /build
   release_tags:
     executor: golang
     environment:
-        PROMU: ./promu-intermediate
-
+      PROMU: ./promu-intermediate
     steps:
-    - checkout
-    - attach_workspace:
-        at: .
-    - run: go build -o promu-intermediate
-    - run: ./promu-intermediate crossbuild tarballs
-    - run: ./promu-intermediate checksum .tarballs
-    - run: ./promu-intermediate release .tarballs
-    - store_artifacts:
-        path: .tarballs
-        destination: releases
-
+      - checkout
+      - attach_workspace:
+          at: .
+      - run: go build -o promu-intermediate
+      - run: ./promu-intermediate crossbuild tarballs
+      - run: ./promu-intermediate checksum .tarballs
+      - run: ./promu-intermediate release .tarballs
+      - store_artifacts:
+          path: .tarballs
+          destination: releases
 workflows:
   version: 2
   promu:
     jobs:
-    - test:
-        filters:
-          tags:
-            only: /.*/
-    - build:
-        filters:
-          tags:
-            only: /.*/
-    - release_tags:
-        requires:
-        - test
-        - build
-        filters:
-          tags:
-            only: /^v[0-9]+(\.[0-9]+){2}(-.+|[^-.]*)$/
-          branches:
-            ignore: /.*/
+      - test:
+          filters:
+            tags:
+              only: /.*/
+      - build:
+          filters:
+            tags:
+              only: /.*/
+      - release_tags:
+          requires:
+            - test
+            - build
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+){2}(-.+|[^-.]*)$/
+            branches:
+              ignore: /.*/
+orbs:
+  prometheus: prometheus/prometheus@0.11.0
