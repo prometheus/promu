@@ -1,3 +1,7 @@
+## 0.12.0 / 2021-04-12
+
+* [CHANGE] Unified CGO crossbuild image #219
+
 ## 0.11.1 / 2021-03-20
 
 * [BUGFIX] Deduplicate platforms when two regexes match the same platform #214
