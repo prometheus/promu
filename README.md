@@ -54,7 +54,7 @@ See documentation example [here](doc/examples/prometheus/.promu.yml)
 
 ## More information
 
-* This tool is part of our reflexion about [Prometheus component Builds](https://docs.google.com/document/d/1Ql-f_aThl-2eB5v3QdKV_zgBdetLLbdxxChpy-TnWSE)
+* This tool is part of our reflection about [Prometheus component Builds](https://docs.google.com/document/d/1Ql-f_aThl-2eB5v3QdKV_zgBdetLLbdxxChpy-TnWSE)
 * All of the core developers are accessible via the [Prometheus Developers Mailinglist](https://groups.google.com/forum/?fromgroups#!forum/prometheus-developers) and the `#prometheus` channel on `irc.freenode.net`.
 
 ## Contributing
