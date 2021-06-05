@@ -79,10 +79,11 @@ func buildBinary(ext string, prefix string, ldflags string, binary Binary) {
 		"-ldflags", ldflags,
 	}
 
+	gobin := GoBin()
 	params = append(params, sh.SplitParameters(flags)...)
 	params = append(params, path.Join(repoPath, binary.Path))
-	info("Building binary: " + "go " + strings.Join(params, " "))
-	if err := sh.RunCommand("go", params...); err != nil {
+	info("Building binary: " + gobin + " " + strings.Join(params, " "))
+	if err := sh.RunCommand(gobin, params...); err != nil {
 		fatal(errors.Wrap(err, "command failed: "+strings.Join(params, " ")))
 	}
 }
@@ -192,4 +193,14 @@ func UserFunc() (interface{}, error) {
 // RepoPathFunc returns the repository path.
 func RepoPathFunc() interface{} {
 	return config.Repository.Path
+}
+
+func GoBin() string {
+	bin := os.Getenv("GO")
+
+	if len(bin) == 0 {
+		bin = "go"
+	}
+
+	return bin
 }
