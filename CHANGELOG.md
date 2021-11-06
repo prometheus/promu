@@ -1,3 +1,7 @@
+## 0.13.0 / 2021-11-06
+
+* [ENHANCEMENT] Add windows/arm64 platform #225
+
 ## 0.12.0 / 2021-04-12
 
 * [CHANGE] Unified CGO crossbuild image #219
