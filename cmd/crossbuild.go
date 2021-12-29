@@ -203,7 +203,7 @@ func (pg platformGroup) buildThread(repoPath string, p int) error {
 	if maxb > len(pg.Platforms) {
 		maxb = len(pg.Platforms)
 	}
-	platformsParam := strings.Join(pg.Platforms[minb:maxb], " ")
+	platformsParam := strings.Join(pg.Platforms[minb:maxb], ",")
 	if len(platformsParam) == 0 {
 		return nil
 	}
