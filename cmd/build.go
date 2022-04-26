@@ -20,6 +20,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -146,10 +147,17 @@ func getLdflags(info repository.Info) string {
 	var ldflags []string
 
 	if len(strings.TrimSpace(config.Build.LDFlags)) > 0 {
+		var buildDate time.Time
+		unixBuildDate, err := strconv.ParseInt(os.Getenv("SOURCE_DATE_EPOCH"), 10, 64)
+		if err == nil {
+			buildDate = time.Unix(unixBuildDate, 0)
+		} else {
+			buildDate = time.Now()
+		}
 		var (
 			tmplOutput = new(bytes.Buffer)
 			fnMap      = template.FuncMap{
-				"date":     time.Now().UTC().Format,
+				"date":     buildDate.UTC().Format,
 				"host":     os.Hostname,
 				"repoPath": RepoPathFunc,
 				"user":     UserFunc,
