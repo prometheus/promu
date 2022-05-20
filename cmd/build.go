@@ -20,6 +20,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -146,10 +147,11 @@ func getLdflags(info repository.Info) string {
 	var ldflags []string
 
 	if len(strings.TrimSpace(config.Build.LDFlags)) > 0 {
+		buildDate := getBuildDate()
 		var (
 			tmplOutput = new(bytes.Buffer)
 			fnMap      = template.FuncMap{
-				"date":     time.Now().UTC().Format,
+				"date":     buildDate.UTC().Format,
 				"host":     os.Hostname,
 				"repoPath": RepoPathFunc,
 				"user":     UserFunc,
@@ -181,6 +183,23 @@ func getLdflags(info repository.Info) string {
 	}
 
 	return strings.Join(ldflags[:], " ")
+}
+
+func getBuildDate() time.Time {
+	var buildDate time.Time
+
+	sourceDate := os.Getenv("SOURCE_DATE_EPOCH")
+	if sourceDate == "" {
+		buildDate = time.Now()
+	} else {
+		unixBuildDate, err := strconv.ParseInt(sourceDate, 10, 64)
+		if err != nil {
+			fatal(errors.Wrap(err, "Failed to parse SOURCE_DATE_EPOCH"))
+		} else {
+			buildDate = time.Unix(unixBuildDate, 0)
+		}
+	}
+	return buildDate
 }
 
 // UserFunc returns the current username.
