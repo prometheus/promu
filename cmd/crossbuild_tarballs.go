@@ -16,7 +16,6 @@ package cmd
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -24,7 +23,7 @@ import (
 
 func runCrossbuildTarballs() {
 
-	dirs, err := ioutil.ReadDir(".build")
+	dirs, err := os.ReadDir(".build")
 	if err != nil {
 		fatal(err)
 	}

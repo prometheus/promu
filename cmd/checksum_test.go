@@ -16,7 +16,6 @@ package cmd
 
 import (
 	"crypto/sha256"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -24,7 +23,7 @@ import (
 )
 
 func TestCalculateSHA256s(t *testing.T) {
-	dir, err := ioutil.TempDir("", "promu")
+	dir, err := os.MkdirTemp("", "promu")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -36,7 +35,7 @@ func TestCalculateSHA256s(t *testing.T) {
 		content  = []byte("temporary file's content")
 		checksum = sha256.Sum256(content)
 	)
-	if err = ioutil.WriteFile(location, content, 0666); err != nil {
+	if err = os.WriteFile(location, content, 0666); err != nil {
 		t.Fatal(err)
 	}
 
