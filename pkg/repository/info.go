@@ -16,7 +16,6 @@ package repository
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"os/exec"
@@ -148,7 +147,7 @@ func repoLocation(repo string) (string, error) {
 
 func findVersion() (string, error) {
 	for _, file := range []string{"VERSION", "version/VERSION"} {
-		b, err := ioutil.ReadFile(file)
+		b, err := os.ReadFile(file)
 		if err != nil {
 			continue
 		}

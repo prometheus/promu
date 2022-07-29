@@ -17,7 +17,6 @@ package cmd
 import (
 	"fmt"
 	"go/build"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -144,7 +143,7 @@ func Execute() {
 func initConfig(filename string) {
 	info(fmt.Sprintf("Using config file: %v", filename))
 
-	configData, err := ioutil.ReadFile(filename)
+	configData, err := os.ReadFile(filename)
 	checkError(err, "Unable to read config file: "+filename)
 	config = NewConfig()
 	err = yaml.Unmarshal(configData, config)
@@ -206,7 +205,7 @@ func fileExists(path ...string) bool {
 
 // readFile reads a file and return the trimmed output
 func readFile(path string) string {
-	data, err := ioutil.ReadFile(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return ""
 	}
