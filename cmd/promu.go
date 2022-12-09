@@ -47,6 +47,7 @@ type Config struct {
 		Flags      string
 		LDFlags    string
 		ExtLDFlags []string
+		Tags       map[string][]string
 		Prefix     string
 		Static     bool
 	}

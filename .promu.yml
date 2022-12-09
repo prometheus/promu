@@ -5,7 +5,10 @@ go:
 repository:
     path: github.com/prometheus/promu
 build:
-    flags: -a -tags 'netgo static_build'
+    tags:
+      all: [netgo, static_build]
+      windows: [static_build]
+    flags: -a
     ldflags: |
         -s
         -X github.com/prometheus/common/version.Version={{.Version}}

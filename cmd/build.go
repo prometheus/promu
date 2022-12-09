@@ -67,7 +67,7 @@ OUTER:
 	return binaries, nil
 }
 
-func buildBinary(ext string, prefix string, ldflags string, binary Binary) {
+func buildBinary(ext string, prefix string, ldflags string, tags []string, binary Binary) {
 	info("Building binary: " + binary.Name)
 	binaryName := fmt.Sprintf("%s%s", binary.Name, ext)
 	fmt.Printf(" >   %s\n", binaryName)
@@ -81,6 +81,9 @@ func buildBinary(ext string, prefix string, ldflags string, binary Binary) {
 	}
 
 	params = append(params, sh.SplitParameters(flags)...)
+	if len(tags) > 0 {
+		params = append(params, "-tags", strings.Join(tags, ","))
+	}
 	params = append(params, path.Join(repoPath, binary.Path))
 	info("Building binary: " + "go " + strings.Join(params, " "))
 	if err := sh.RunCommand("go", params...); err != nil {
@@ -88,9 +91,9 @@ func buildBinary(ext string, prefix string, ldflags string, binary Binary) {
 	}
 }
 
-func buildAll(ext string, prefix string, ldflags string, binaries []Binary) {
+func buildAll(ext string, prefix string, ldflags string, tags []string, binaries []Binary) {
 	for _, binary := range binaries {
-		buildBinary(ext, prefix, ldflags, binary)
+		buildBinary(ext, prefix, ldflags, tags, binary)
 	}
 }
 
@@ -128,7 +131,7 @@ func runBuild(binariesString string) {
 	defer os.Unsetenv("CGO_ENABLED")
 
 	if binariesString == "all" {
-		buildAll(ext, prefix, ldflags, binaries)
+		buildAll(ext, prefix, ldflags, getTags(config.Build.Tags), binaries)
 		return
 	}
 
@@ -139,7 +142,7 @@ func runBuild(binariesString string) {
 	}
 
 	for _, binary := range binariesToBuild {
-		buildBinary(ext, prefix, ldflags, binary)
+		buildBinary(ext, prefix, ldflags, getTags(config.Build.Tags), binary)
 	}
 }
 
@@ -211,4 +214,11 @@ func UserFunc() (interface{}, error) {
 // RepoPathFunc returns the repository path.
 func RepoPathFunc() interface{} {
 	return config.Repository.Path
+}
+
+func getTags(allTags map[string][]string) []string {
+	if tags, ok := allTags[envOr("GOOS", goos)]; ok {
+		return tags
+	}
+	return allTags["all"]
 }
