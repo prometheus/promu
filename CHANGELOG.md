@@ -1,3 +1,7 @@
+## 0.14.0 / 2022-12-09
+
+* [FEATURE] Add the ability to override tags per GOOS
+
 ## 0.13.0 / 2021-11-06
 
 * [ENHANCEMENT] Add windows/arm64 platform #225
