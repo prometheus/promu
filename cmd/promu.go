@@ -147,7 +147,7 @@ func initConfig(filename string) {
 	configData, err := os.ReadFile(filename)
 	checkError(err, "Unable to read config file: "+filename)
 	config = NewConfig()
-	err = yaml.Unmarshal(configData, config)
+	err = yaml.UnmarshalStrict(configData, config)
 	checkError(err, "Unable to parse config file: "+filename)
 }
 
