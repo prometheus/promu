@@ -121,6 +121,11 @@ func Execute() {
 		runBuild(optArg(*binariesArg, 0, "all"))
 	case checkLicensescmd.FullCommand():
 		runCheckLicenses(optArg(*checkLicLocation, 0, "."), *headerLength, *sourceExtensions)
+	case bumpcmd.FullCommand():
+		err = runBumpVersion("CHANGELOG.md", "VERSION", *bumpLevel, *bumpPreRelease, *bumpBaseBranch, *bumpDryRun)
+		if err != nil {
+			fatal(err)
+		}
 	case checkChangelogcmd.FullCommand():
 		if err := runCheckChangelog(*checkChangelogPath, *checkChangelogVersion); err != nil {
 			fatal(err)

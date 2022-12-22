@@ -24,9 +24,9 @@ import (
 
 	"github.com/google/go-github/v25/github"
 	"github.com/pkg/errors"
-	"golang.org/x/oauth2"
 
 	"github.com/prometheus/promu/pkg/changelog"
+	githubUtil "github.com/prometheus/promu/pkg/github"
 	"github.com/prometheus/promu/util/retry"
 )
 
@@ -39,25 +39,16 @@ var (
 )
 
 func runRelease(location string) {
-	token := os.Getenv("GITHUB_TOKEN")
-	if len(token) == 0 {
-		fatal(errors.New("GITHUB_TOKEN not defined"))
-	}
-
 	ctx := context.Background()
 	if *timeout != time.Duration(0) {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, *timeout)
 		defer cancel()
 	}
-	client := github.NewClient(
-		oauth2.NewClient(
-			ctx,
-			oauth2.StaticTokenSource(
-				&oauth2.Token{AccessToken: token},
-			),
-		),
-	)
+	client, err := githubUtil.NewClient(ctx)
+	if err != nil {
+		fatal(err)
+	}
 
 	semVer, err := projInfo.ToSemver()
 	if err != nil {
