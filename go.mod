@@ -8,7 +8,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/common v0.37.0
 	go.uber.org/atomic v1.10.0
-	golang.org/x/oauth2 v0.2.0
+	golang.org/x/oauth2 v0.3.0
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	gopkg.in/yaml.v2 v2.4.0
 )
@@ -24,8 +24,8 @@ require (
 	github.com/prometheus/client_golang v1.12.1 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/procfs v0.7.3 // indirect
-	golang.org/x/net v0.2.0 // indirect
-	golang.org/x/sys v0.2.0 // indirect
+	golang.org/x/net v0.3.0 // indirect
+	golang.org/x/sys v0.3.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 )
