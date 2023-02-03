@@ -217,6 +217,7 @@ func (pg platformGroup) buildThread(repoPath string, p int) error {
 
 	ctrName := "promu-crossbuild-" + pg.Name + strconv.FormatInt(time.Now().Unix(), 10) + "-" + strconv.Itoa(p)
 	err = sh.RunCommand("docker", "create", "-t",
+		"--env", "GIT_CEILING_DIRECTORIES=/",
 		"--name", ctrName,
 		pg.DockerImage,
 		"-i", repoPath,
