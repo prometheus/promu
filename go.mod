@@ -8,7 +8,7 @@ require (
 	github.com/google/go-github/v25 v25.1.3
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/common v0.44.0
-	go.uber.org/atomic v1.10.0
+	go.uber.org/atomic v1.11.0
 	golang.org/x/oauth2 v0.8.0
 	gopkg.in/yaml.v2 v2.4.0
 )
