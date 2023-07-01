@@ -58,6 +58,7 @@ var (
 		"linux/mipsle",
 		"linux/ppc64",
 		"linux/ppc64le",
+		"linux/riscv64",
 		"linux/s390x",
 		"netbsd/386",
 		"netbsd/amd64",
