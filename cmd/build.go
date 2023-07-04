@@ -26,7 +26,6 @@ import (
 	"time"
 
 	kingpin "github.com/alecthomas/kingpin/v2"
-	"github.com/pkg/errors"
 
 	"github.com/prometheus/promu/pkg/repository"
 	"github.com/prometheus/promu/util/sh"
@@ -91,7 +90,7 @@ func buildBinary(ext string, prefix string, ldflags string, tags []string, binar
 	params = append(params, path.Join(repoPath, binary.Path))
 	info("Building binary: " + "go " + strings.Join(params, " "))
 	if err := sh.RunCommand("go", params...); err != nil {
-		fatal(errors.Wrap(err, "command failed: "+strings.Join(params, " ")))
+		fatal(fmt.Errorf("command failed: %s: %s", strings.Join(params, " "), err))
 	}
 }
 
@@ -142,7 +141,7 @@ func runBuild(binariesString string) {
 	binariesArray := strings.Split(binariesString, ",")
 	binariesToBuild, err := validateBinaryNames(binariesArray, binaries)
 	if err != nil {
-		fatal(errors.Wrap(err, "validation of given binary names for build command failed"))
+		fatal(fmt.Errorf("validation of given binary names for build command failed: %s", err))
 	}
 
 	for _, binary := range binariesToBuild {
@@ -168,11 +167,11 @@ func getLdflags(info repository.Info) string {
 
 		tmpl, err := template.New("ldflags").Funcs(fnMap).Parse(ldflagsTmpl)
 		if err != nil {
-			fatal(errors.Wrap(err, "Failed to parse ldflags text/template"))
+			fatal(fmt.Errorf("Failed to parse ldflags text/template: %s", err))
 		}
 
 		if err := tmpl.Execute(tmplOutput, info); err != nil {
-			fatal(errors.Wrap(err, "Failed to execute ldflags text/template"))
+			fatal(fmt.Errorf("Failed to execute ldflags text/template: %s", err))
 		}
 
 		ldflags = append(ldflags, strings.Split(tmplOutput.String(), "\n")...)
@@ -201,7 +200,7 @@ func getBuildDate() time.Time {
 	} else {
 		unixBuildDate, err := strconv.ParseInt(sourceDate, 10, 64)
 		if err != nil {
-			fatal(errors.Wrap(err, "Failed to parse "+sourceDateEpoch))
+			fatal(fmt.Errorf("Failed to parse %s: %w", sourceDateEpoch, err))
 		} else {
 			buildDate = time.Unix(unixBuildDate, 0)
 		}
