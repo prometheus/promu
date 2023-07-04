@@ -1,3 +1,8 @@
+## 0.15.0 / 2023-07-04
+
+* [CHANGE] Use unmarshalstrict #240
+* [CHANGE] Add linux/riscv64 to default platforms #254
+
 ## 0.14.0 / 2022-12-09
 
 * [FEATURE] Add the ability to override tags per GOOS
