@@ -32,6 +32,10 @@ import (
 	"github.com/prometheus/promu/util/sh"
 )
 
+const (
+	sourceDateEpoch = "SOURCE_DATE_EPOCH"
+)
+
 var (
 	buildcmd        = app.Command("build", "Build a Go project")
 	buildCgoFlagSet bool
@@ -155,7 +159,7 @@ func getLdflags(info repository.Info) string {
 			tmplOutput = new(bytes.Buffer)
 			fnMap      = template.FuncMap{
 				"date":     buildDate.UTC().Format,
-				"host":     os.Hostname,
+				"host":     HostFunc,
 				"repoPath": RepoPathFunc,
 				"user":     UserFunc,
 			}
@@ -191,13 +195,13 @@ func getLdflags(info repository.Info) string {
 func getBuildDate() time.Time {
 	var buildDate time.Time
 
-	sourceDate := os.Getenv("SOURCE_DATE_EPOCH")
+	sourceDate := os.Getenv(sourceDateEpoch)
 	if sourceDate == "" {
 		buildDate = time.Now()
 	} else {
 		unixBuildDate, err := strconv.ParseInt(sourceDate, 10, 64)
 		if err != nil {
-			fatal(errors.Wrap(err, "Failed to parse SOURCE_DATE_EPOCH"))
+			fatal(errors.Wrap(err, "Failed to parse "+sourceDateEpoch))
 		} else {
 			buildDate = time.Unix(unixBuildDate, 0)
 		}
@@ -205,10 +209,27 @@ func getBuildDate() time.Time {
 	return buildDate
 }
 
+func HostFunc() string {
+	if os.Getenv(sourceDateEpoch) == "" {
+		hostname, err := os.Hostname()
+		if err != nil {
+			return "unknown-host"
+		} else {
+			return hostname
+		}
+	} else {
+		return "reproducible"
+	}
+}
+
 // UserFunc returns the current username.
 func UserFunc() (interface{}, error) {
-	// os/user.Current() doesn't always work without CGO
-	return shellOutput("whoami"), nil
+	if os.Getenv(sourceDateEpoch) == "" {
+		// os/user.Current() doesn't always work without CGO
+		return shellOutput("whoami"), nil
+	} else {
+		return "reproducible", nil
+	}
 }
 
 // RepoPathFunc returns the repository path.
