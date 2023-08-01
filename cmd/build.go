@@ -210,26 +210,30 @@ func getBuildDate() time.Time {
 }
 
 func HostFunc() string {
-	if os.Getenv(sourceDateEpoch) == "" {
+	if isReproducibleBuild() {
+		return "reproducible"
+	} else {
 		hostname, err := os.Hostname()
 		if err != nil {
 			return "unknown-host"
 		} else {
 			return hostname
 		}
-	} else {
-		return "reproducible"
 	}
 }
 
 // UserFunc returns the current username.
 func UserFunc() (interface{}, error) {
-	if os.Getenv(sourceDateEpoch) == "" {
+	if isReproducibleBuild() {
+		return "reproducible", nil
+	} else {
 		// os/user.Current() doesn't always work without CGO
 		return shellOutput("whoami"), nil
-	} else {
-		return "reproducible", nil
 	}
+}
+
+func isReproducibleBuild() bool {
+	return os.Getenv(sourceDateEpoch) != ""
 }
 
 // RepoPathFunc returns the repository path.
