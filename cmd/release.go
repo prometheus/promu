@@ -16,6 +16,7 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -23,7 +24,6 @@ import (
 	"time"
 
 	"github.com/google/go-github/v25/github"
-	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 
 	"github.com/prometheus/promu/pkg/changelog"
@@ -74,7 +74,7 @@ func runRelease(location string) {
 	for {
 		releases, resp, err := client.Repositories.ListReleases(ctx, projInfo.Owner, projInfo.Name, opts)
 		if err != nil {
-			fatal(errors.Wrap(err, "failed to list releases"))
+			fatal(fmt.Errorf("failed to list releases: %s", err))
 		}
 		for _, r := range releases {
 			if r.GetTagName() == tag {
@@ -115,7 +115,7 @@ func runRelease(location string) {
 				Prerelease:      &prerelease,
 			})
 		if err != nil {
-			fatal(errors.Wrap(err, fmt.Sprintf("failed to create a draft release for %s", projInfo.Version)))
+			fatal(fmt.Errorf("failed to create a draft release for %s: %s", projInfo.Version, err))
 		}
 	}
 
@@ -138,7 +138,7 @@ func runRelease(location string) {
 			}
 			opts.Page = resp.NextPage
 		}
-		fatal(errors.Wrap(err, "failed to upload all files"))
+		fatal(fmt.Errorf("failed to upload all files: %s", err))
 	}
 }
 
@@ -157,7 +157,7 @@ func releaseFile(ctx context.Context, client *github.Client, release *github.Rep
 		for {
 			assets, resp, err := client.Repositories.ListReleaseAssets(ctx, projInfo.Owner, projInfo.Name, release.GetID(), opts)
 			if err != nil {
-				return errors.Wrap(err, "failed to list release assets")
+				return fmt.Errorf("failed to list release assets: %s", err)
 			}
 			var stop bool
 			for _, asset := range assets {
@@ -167,10 +167,10 @@ func releaseFile(ctx context.Context, client *github.Client, release *github.Rep
 					if release.GetDraft() {
 						_, err = client.Repositories.DeleteReleaseAsset(ctx, projInfo.Owner, projInfo.Name, asset.GetID())
 						if err != nil {
-							err = errors.Wrapf(err, "failed to delete existing asset %q", filename)
+							err = fmt.Errorf("failed to delete existing asset %q: %w", filename, err)
 						}
 					} else {
-						err = errors.Errorf("%q already exists", filename)
+						err = fmt.Errorf("%q already exists", filename)
 					}
 					if err != nil {
 						return err
@@ -205,7 +205,7 @@ func releaseFile(ctx context.Context, client *github.Client, release *github.Rep
 			return again, err
 		})
 		if err != nil {
-			return errors.Wrapf(err, "failed to upload %q after %d attempts", filename, maxAttempts)
+			return fmt.Errorf("failed to upload %q after %d attempts: %w", filename, maxAttempts, err)
 		}
 		fmt.Println(" > uploaded", filename)
 

@@ -21,8 +21,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/pkg/errors"
-
 	"github.com/prometheus/promu/pkg/changelog"
 )
 
@@ -51,7 +49,7 @@ func runCheckLicenses(path string, n int, extensions []string) {
 
 	filesMissingHeaders, err := checkLicenses(path, n, extensions)
 	if err != nil {
-		fatal(errors.Wrap(err, "Failed to check files for license header"))
+		fatal(fmt.Errorf("Failed to check files for license header: %s", err))
 	}
 
 	for _, file := range filesMissingHeaders {
@@ -142,7 +140,7 @@ func runCheckChangelog(path string, version string) error {
 	if version == "" {
 		_, err := projInfo.ToSemver()
 		if err != nil {
-			return errors.Wrap(err, "invalid semver version")
+			return fmt.Errorf("invalid semver version: %w", err)
 		}
 
 		version = projInfo.Version
@@ -156,13 +154,13 @@ func runCheckChangelog(path string, version string) error {
 
 	entry, err := changelog.ReadEntry(f, version)
 	if err != nil {
-		return errors.Wrapf(err, "%s:", path)
+		return fmt.Errorf("%s: %w", path, err)
 	}
 
 	// Check that the changes are ordered correctly.
 	err = entry.Changes.Sorted()
 	if err != nil {
-		return errors.Wrap(err, "invalid changelog entry")
+		return fmt.Errorf("invalid changelog entry: %w", err)
 	}
 
 	return nil

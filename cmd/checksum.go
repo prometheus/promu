@@ -21,8 +21,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/pkg/errors"
 )
 
 const (
@@ -37,17 +35,17 @@ var (
 func runChecksum(path string) {
 	checksums, err := calculateSHA256s(path)
 	if err != nil {
-		fatal(errors.Wrap(err, "Failed to calculate checksums"))
+		fatal(fmt.Errorf("Failed to calculate checksums: %s", err))
 	}
 
 	file, err := os.Create(filepath.Join(path, checksumsFilename))
 	if err != nil {
-		fatal(errors.Wrap(err, "Failed to create checksums file"))
+		fatal(fmt.Errorf("Failed to create checksums file: %s", err))
 	}
 	defer file.Close()
 	for _, c := range checksums {
 		if _, err := fmt.Fprintf(file, "%x  %s\n", c.checksum, c.filename); err != nil {
-			fatal(errors.Wrap(err, "Failed to write to checksums file"))
+			fatal(fmt.Errorf("Failed to write to checksums file: %s", err))
 		}
 	}
 }

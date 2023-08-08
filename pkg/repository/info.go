@@ -25,7 +25,6 @@ import (
 	"strings"
 
 	"github.com/Masterminds/semver"
-	"github.com/pkg/errors"
 )
 
 // Info represents current project useful information.
@@ -67,14 +66,14 @@ func NewInfo(warnf func(error)) (Info, error) {
 		// Not a git repository.
 		repo, err := os.Getwd()
 		if err != nil {
-			return info, errors.Wrap(err, "couldn't get current working directory")
+			return info, fmt.Errorf("couldn't get current working directory: %w", err)
 		}
 		repo = strings.TrimPrefix(repo, os.Getenv("GOPATH"))
 		repo = strings.TrimPrefix(repo, "/src/")
 
 		user, err := user.Current()
 		if err != nil {
-			return info, errors.Wrap(err, "couldn't get current user")
+			return info, fmt.Errorf("couldn't get current user: %w", err)
 		}
 
 		info = Info{
@@ -87,7 +86,7 @@ func NewInfo(warnf func(error)) (Info, error) {
 	} else {
 		branch, err := shellOutputWithError("git", "rev-parse", "--abbrev-ref", "HEAD")
 		if err != nil {
-			return info, errors.Wrap(err, "unable to get the current branch")
+			return info, fmt.Errorf("unable to get the current branch: %w", err)
 		}
 
 		remote, err := shellOutputWithError("git", "config", "--get", fmt.Sprintf("branch.%s.remote", branch))
@@ -98,11 +97,11 @@ func NewInfo(warnf func(error)) (Info, error) {
 
 		repoURL, err := shellOutputWithError("git", "config", "--get", fmt.Sprintf("remote.%s.url", remote))
 		if err != nil {
-			warnf(errors.Wrapf(err, "unable to get repository location for remote %q", remote))
+			warnf(fmt.Errorf("unable to get repository location for remote %q: %w", remote, err))
 		}
 		repo, err := repoLocation(repoURL)
 		if err != nil {
-			return info, errors.Wrapf(err, "couldn't parse repository location: %q", repoURL)
+			return info, fmt.Errorf("couldn't parse repository location: %q: %w", repoURL, err)
 		}
 		info = Info{
 			Branch:   branch,
@@ -115,7 +114,7 @@ func NewInfo(warnf func(error)) (Info, error) {
 
 	info.Version, err = findVersion()
 	if err != nil {
-		warnf(errors.Wrap(err, "unable to find project's version"))
+		warnf(fmt.Errorf("unable to find project's version: %s", err))
 	}
 	return info, nil
 }
@@ -160,11 +159,11 @@ func findVersion() (string, error) {
 // ToSemver returns a *semver.Version from Info.
 func (i Info) ToSemver() (*semver.Version, error) {
 	if strings.HasPrefix(i.Version, "v") {
-		return nil, errors.Errorf("version %q shouldn't start with 'v'", i.Version)
+		return nil, fmt.Errorf("version %q shouldn't start with 'v'", i.Version)
 	}
 	semVer, err := semver.NewVersion(i.Version)
 	if err != nil {
-		return nil, errors.Wrap(err, "invalid semver version")
+		return nil, fmt.Errorf("invalid semver version: %w", err)
 	}
 	return semVer, nil
 }

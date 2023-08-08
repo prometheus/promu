@@ -26,7 +26,6 @@ import (
 	"time"
 
 	kingpin "github.com/alecthomas/kingpin/v2"
-	"github.com/pkg/errors"
 	"go.uber.org/atomic"
 
 	"github.com/prometheus/promu/util/sh"
@@ -151,20 +150,20 @@ func runCrossbuild() {
 	allPlatforms = removeDuplicates(allPlatforms)
 
 	if len(unknownPlatforms) > 0 {
-		warn(errors.Errorf("unknown/unhandled platforms: %s", unknownPlatforms))
+		warn(fmt.Errorf("unknown/unhandled platforms: %s", unknownPlatforms))
 	}
 
 	if !cgo {
 		// In non-CGO, use the `base` image without any crossbuild toolchain.
 		pg := &platformGroup{"base", dockerBaseBuilderImage, allPlatforms}
 		if err := pg.Build(repoPath); err != nil {
-			fatal(errors.Wrapf(err, "The %s builder docker image exited unexpectedly", pg.Name))
+			fatal(fmt.Errorf("The %s builder docker image exited unexpectedly: %s", pg.Name, err))
 		}
 	} else {
 		// In CGO, use the `main` image with crossbuild toolchain.
 		pg := &platformGroup{"main", dockerMainBuilderImage, allPlatforms}
 		if err := pg.Build(repoPath); err != nil {
-			fatal(errors.Wrapf(err, "The %s builder docker image exited unexpectedly", pg.Name))
+			fatal(fmt.Errorf("The %s builder docker image exited unexpectedly: %s", pg.Name, err))
 		}
 	}
 }
@@ -213,7 +212,7 @@ func (pg platformGroup) buildThread(repoPath string, p int) error {
 
 	cwd, err := os.Getwd()
 	if err != nil {
-		return errors.Wrapf(err, "couldn't get current working directory")
+		return fmt.Errorf("couldn't get current working directory: %s", err)
 	}
 
 	ctrName := "promu-crossbuild-" + pg.Name + strconv.FormatInt(time.Now().Unix(), 10) + "-" + strconv.Itoa(p)

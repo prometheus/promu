@@ -6,7 +6,6 @@ require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/alecthomas/kingpin/v2 v2.3.2
 	github.com/google/go-github/v25 v25.1.3
-	github.com/pkg/errors v0.9.1
 	github.com/prometheus/common v0.44.0
 	go.uber.org/atomic v1.11.0
 	golang.org/x/oauth2 v0.9.0
