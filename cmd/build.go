@@ -211,24 +211,21 @@ func getBuildDate() time.Time {
 func HostFunc() string {
 	if isReproducibleBuild() {
 		return "reproducible"
-	} else {
-		hostname, err := os.Hostname()
-		if err != nil {
-			return "unknown-host"
-		} else {
-			return hostname
-		}
 	}
+	hostname, err := os.Hostname()
+	if err != nil {
+		return "unknown-host"
+	}
+	return hostname
 }
 
 // UserFunc returns the current username.
 func UserFunc() (interface{}, error) {
 	if isReproducibleBuild() {
 		return "reproducible", nil
-	} else {
-		// os/user.Current() doesn't always work without CGO
-		return shellOutput("whoami"), nil
 	}
+	// os/user.Current() doesn't always work without CGO
+	return shellOutput("whoami"), nil
 }
 
 func isReproducibleBuild() bool {

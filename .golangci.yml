@@ -10,6 +10,7 @@ linters:
     - errorlint
     - goimports
     - govet
+    - revive
     - staticcheck
 
 linters-settings:
