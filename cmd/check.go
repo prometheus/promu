@@ -49,7 +49,7 @@ func runCheckLicenses(path string, n int, extensions []string) {
 
 	filesMissingHeaders, err := checkLicenses(path, n, extensions)
 	if err != nil {
-		fatal(fmt.Errorf("Failed to check files for license header: %s", err))
+		fatal(fmt.Errorf("Failed to check files for license header: %w", err))
 	}
 
 	for _, file := range filesMissingHeaders {

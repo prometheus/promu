@@ -64,7 +64,7 @@ func runTarball(binariesLocation string) {
 	dir := filepath.Join(tmpDir, name)
 
 	if err := os.MkdirAll(dir, 0777); err != nil {
-		fatal(fmt.Errorf("Failed to create directory: %s", err))
+		fatal(fmt.Errorf("Failed to create directory: %w", err))
 	}
 	defer sh.RunCommand("rm", "-rf", tmpDir)
 

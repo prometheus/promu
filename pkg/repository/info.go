@@ -114,7 +114,7 @@ func NewInfo(warnf func(error)) (Info, error) {
 
 	info.Version, err = findVersion()
 	if err != nil {
-		warnf(fmt.Errorf("unable to find project's version: %s", err))
+		warnf(fmt.Errorf("unable to find project's version: %w", err))
 	}
 	return info, nil
 }

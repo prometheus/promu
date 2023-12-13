@@ -1,6 +1,12 @@
-# Run only staticcheck for now. Additional linters will be enabled one-by-one.
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
 linters:
+  disable:
+    - errcheck
+    - unused
   enable:
-  - staticcheck
-  - govet
-  disable-all: true
+    - errorlint
+    - staticcheck
+    - govet

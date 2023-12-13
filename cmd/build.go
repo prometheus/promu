@@ -90,7 +90,7 @@ func buildBinary(ext string, prefix string, ldflags string, tags []string, binar
 	params = append(params, path.Join(repoPath, binary.Path))
 	info("Building binary: " + "go " + strings.Join(params, " "))
 	if err := sh.RunCommand("go", params...); err != nil {
-		fatal(fmt.Errorf("command failed: %s: %s", strings.Join(params, " "), err))
+		fatal(fmt.Errorf("command failed: %s: %w", strings.Join(params, " "), err))
 	}
 }
 
@@ -141,7 +141,7 @@ func runBuild(binariesString string) {
 	binariesArray := strings.Split(binariesString, ",")
 	binariesToBuild, err := validateBinaryNames(binariesArray, binaries)
 	if err != nil {
-		fatal(fmt.Errorf("validation of given binary names for build command failed: %s", err))
+		fatal(fmt.Errorf("validation of given binary names for build command failed: %w", err))
 	}
 
 	for _, binary := range binariesToBuild {
@@ -167,11 +167,11 @@ func getLdflags(info repository.Info) string {
 
 		tmpl, err := template.New("ldflags").Funcs(fnMap).Parse(ldflagsTmpl)
 		if err != nil {
-			fatal(fmt.Errorf("Failed to parse ldflags text/template: %s", err))
+			fatal(fmt.Errorf("Failed to parse ldflags text/template: %w", err))
 		}
 
 		if err := tmpl.Execute(tmplOutput, info); err != nil {
-			fatal(fmt.Errorf("Failed to execute ldflags text/template: %s", err))
+			fatal(fmt.Errorf("Failed to execute ldflags text/template: %w", err))
 		}
 
 		ldflags = append(ldflags, strings.Split(tmplOutput.String(), "\n")...)
