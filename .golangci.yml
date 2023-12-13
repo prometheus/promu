@@ -8,5 +8,10 @@ linters:
     - unused
   enable:
     - errorlint
-    - staticcheck
+    - goimports
     - govet
+    - staticcheck
+
+linters-settings:
+  goimports:
+    local-prefixes: github.com/prometheus/promu
