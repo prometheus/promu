@@ -22,7 +22,6 @@ import (
 )
 
 func runCrossbuildTarballs() {
-
 	dirs, err := os.ReadDir(".build")
 	if err != nil {
 		fatal(err)

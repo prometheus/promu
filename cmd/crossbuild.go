@@ -103,7 +103,7 @@ var (
 )
 
 func runCrossbuild() {
-	//Check required configuration
+	// Check required configuration
 	if len(strings.TrimSpace(config.Repository.Path)) == 0 {
 		log.Fatalf("missing required '%s' configuration", "repository.path")
 	}

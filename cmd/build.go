@@ -78,7 +78,8 @@ func buildBinary(ext string, prefix string, ldflags string, tags []string, binar
 	repoPath := config.Repository.Path
 	flags := config.Build.Flags
 
-	params := []string{"build",
+	params := []string{
+		"build",
 		"-o", path.Join(prefix, binaryName),
 		"-ldflags", ldflags,
 	}
@@ -101,7 +102,7 @@ func buildAll(ext string, prefix string, ldflags string, tags []string, binaries
 }
 
 func runBuild(binariesString string) {
-	//Check required configuration
+	// Check required configuration
 	if len(strings.TrimSpace(config.Repository.Path)) == 0 {
 		log.Fatalf("missing required '%s' configuration", "repository.path")
 	}
