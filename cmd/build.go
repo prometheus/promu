@@ -189,7 +189,7 @@ func getLdflags(info repository.Info) string {
 		ldflags = append(ldflags, fmt.Sprintf("-extldflags '%s'", strings.Join(extLDFlags, " ")))
 	}
 
-	return strings.Join(ldflags[:], " ")
+	return strings.Join(ldflags, " ")
 }
 
 func getBuildDate() time.Time {

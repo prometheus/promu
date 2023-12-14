@@ -8,6 +8,7 @@ linters:
     - unused
   enable:
     - errorlint
+    - gocritic
     - gofumpt
     - goimports
     - govet
