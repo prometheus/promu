@@ -114,7 +114,7 @@ func NewInfo(warnf func(error)) (Info, error) {
 
 	info.Version, err = findVersion()
 	if err != nil {
-		warnf(fmt.Errorf("unable to find project's version: %s", err))
+		warnf(fmt.Errorf("unable to find project's version: %w", err))
 	}
 	return info, nil
 }
@@ -122,8 +122,10 @@ func NewInfo(warnf func(error)) (Info, error) {
 // Convert SCP-like URL to SSH URL(e.g. [user@]host.xz:path/to/repo.git/)
 // ref. http://git-scm.com/docs/git-fetch#_git_urls
 // (golang hasn't supported Perl-like negative look-behind match)
-var hasSchemePattern = regexp.MustCompile("^[^:]+://")
-var scpLikeURLPattern = regexp.MustCompile("^([^@]+@)?([^:]+):/?(.+)$")
+var (
+	hasSchemePattern  = regexp.MustCompile("^[^:]+://")
+	scpLikeURLPattern = regexp.MustCompile("^([^@]+@)?([^:]+):/?(.+)$")
+)
 
 func repoLocation(repo string) (string, error) {
 	if !hasSchemePattern.MatchString(repo) && scpLikeURLPattern.MatchString(repo) {
