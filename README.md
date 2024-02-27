@@ -8,39 +8,42 @@ usage: promu [<flags>] <command> [<args> ...]
 promu is the utility tool for building and releasing Prometheus projects
 
 Flags:
-  -h, --help                 Show context-sensitive help (also try --help-long and --help-man).
+  -h, --[no-]help            Show context-sensitive help (also try --help-long and --help-man).
   -c, --config=".promu.yml"  Path to config file
-  -v, --verbose              Verbose output
+  -v, --[no-]verbose         Verbose output
 
 Commands:
-  help [<command>...]
+help [<command>...]
     Show help.
 
-  build [<flags>] [<binary-names>...]
+build [<flags>] [<binary-names>...]
     Build a Go project
 
-  check licenses [<flags>] [<location>...]
+check licenses [<flags>] [<location>...]
     Inspect source files for each file in a given directory
 
-  check changelog [<flags>]
+check changelog [<flags>]
     Check that CHANGELOG.md follows the guidelines
 
-  checksum [<location>...]
+checksum [<location>...]
     Calculate the SHA256 checksum for each file in the given location
 
-  crossbuild [<flags>] [<tarballs>]
+codesign <path>
+    Code sign the darwin binary using rcodesign.
+
+crossbuild [<flags>] [<tarballs>]
     Crossbuild a Go project using Golang builder Docker images
 
-  info
+info
     Print info about current project and exit
 
-  release [<flags>] [<location>...]
+release [<flags>] [<location>...]
     Upload all release files to the Github release
 
-  tarball [<flags>] [<location>...]
+tarball [<flags>] [<location>...]
     Create a tarball from the built Go project
 
-  version [<flags>]
+version [<flags>]
     Print the version and exit
 ```
 

@@ -138,6 +138,8 @@ func Execute() {
 		runTarball(optArg(*tarBinariesLocation, 0, "."))
 	case versioncmd.FullCommand():
 		runVersion()
+	case codesigncmd.FullCommand():
+		runCodeSign(*binaryPath)
 	}
 }
 
