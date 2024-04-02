@@ -1,3 +1,8 @@
+## 0.16.0 / 2024-04-02
+
+* [FEATURE] Do not discover user/host for reproducible builds #267
+* [BUGFIX] Fix example/prometheus build error #274
+
 ## 0.15.0 / 2023-07-04
 
 * [CHANGE] Use unmarshalstrict #240
