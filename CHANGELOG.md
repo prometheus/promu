@@ -1,3 +1,7 @@
+## 0.17.0 / 2024-04-14
+
+* [FEATURE] Add codesign utility function #284
+
 ## 0.16.0 / 2024-04-02
 
 * [FEATURE] Do not discover user/host for reproducible builds #267
