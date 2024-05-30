@@ -1,1 +1,1 @@
-* Steve Durrheimer <s.durrheimer@gmail.com>
+* Kemal Akkoyun <kakkoyun@gmail.com> @kakkoyun
