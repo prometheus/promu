@@ -128,14 +128,11 @@ func runBuild(binariesString string) {
 
 	ldflags = getLdflags(projInfo)
 
-	if os.Getenv("CGO_ENABLED") == "" {
-		os.Setenv("CGO_ENABLED", "0")
-		defer os.Unsetenv("CGO_ENABLED")
-	}
+	os.Setenv("CGO_ENABLED", "0")
 	if cgo {
 		os.Setenv("CGO_ENABLED", "1")
-		defer os.Unsetenv("CGO_ENABLED")
 	}
+	defer os.Unsetenv("CGO_ENABLED")
 
 	if binariesString == "all" {
 		buildAll(ext, prefix, ldflags, getTags(config.Build.Tags), binaries)
