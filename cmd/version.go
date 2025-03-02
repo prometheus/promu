@@ -27,7 +27,7 @@ var (
 
 func runVersion() {
 	if *short {
-		fmt.Printf(version.Version)
+		fmt.Println(version.Version)
 	} else {
 		fmt.Println(version.Print("promu"))
 	}
