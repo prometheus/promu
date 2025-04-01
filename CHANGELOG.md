@@ -1,3 +1,7 @@
+## 0.17.1 / 2025-04-02
+
+* [BUGFIX] Fix short version print #333
+
 ## 0.17.0 / 2024-04-14
 
 * [FEATURE] Add codesign utility function #284
