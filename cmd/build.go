@@ -168,11 +168,11 @@ func getLdflags(info repository.Info) string {
 
 		tmpl, err := template.New("ldflags").Funcs(fnMap).Parse(ldflagsTmpl)
 		if err != nil {
-			fatal(fmt.Errorf("Failed to parse ldflags text/template: %w", err))
+			fatal(fmt.Errorf("failed to parse ldflags text/template: %w", err))
 		}
 
 		if err := tmpl.Execute(tmplOutput, info); err != nil {
-			fatal(fmt.Errorf("Failed to execute ldflags text/template: %w", err))
+			fatal(fmt.Errorf("failed to execute ldflags text/template: %w", err))
 		}
 
 		ldflags = append(ldflags, strings.Split(tmplOutput.String(), "\n")...)
@@ -201,7 +201,7 @@ func getBuildDate() time.Time {
 	} else {
 		unixBuildDate, err := strconv.ParseInt(sourceDate, 10, 64)
 		if err != nil {
-			fatal(fmt.Errorf("Failed to parse %s: %w", sourceDateEpoch, err))
+			fatal(fmt.Errorf("failed to parse %s: %w", sourceDateEpoch, err))
 		} else {
 			buildDate = time.Unix(unixBuildDate, 0)
 		}

@@ -1,26 +1,43 @@
-issues:
-  max-issues-per-linter: 0
-  max-same-issues: 0
-
+version: "2"
 linters:
-  disable:
-    - errcheck
-    - unused
   enable:
     - errorlint
     - gocritic
+    - revive
+  disable:
+    - errcheck
+    - unused
+  settings:
+    revive:
+      rules:
+        - name: unused-parameter
+          severity: warning
+          disabled: true
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+formatters:
+  enable:
     - gofumpt
     - goimports
-    - govet
-    - revive
-    - staticcheck
-
-linters-settings:
-  goimports:
-    local-prefixes: github.com/prometheus/promu
-  revive:
-    rules:
-      # https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md#unused-parameter
-      - name: unused-parameter
-        severity: warning
-        disabled: true
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/prometheus/promu
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

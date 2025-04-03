@@ -157,13 +157,13 @@ func runCrossbuild() {
 		// In non-CGO, use the `base` image without any crossbuild toolchain.
 		pg := &platformGroup{"base", dockerBaseBuilderImage, allPlatforms}
 		if err := pg.Build(repoPath); err != nil {
-			fatal(fmt.Errorf("The %s builder docker image exited unexpectedly: %w", pg.Name, err))
+			fatal(fmt.Errorf("the %s builder docker image exited unexpectedly: %w", pg.Name, err))
 		}
 	} else {
 		// In CGO, use the `main` image with crossbuild toolchain.
 		pg := &platformGroup{"main", dockerMainBuilderImage, allPlatforms}
 		if err := pg.Build(repoPath); err != nil {
-			fatal(fmt.Errorf("The %s builder docker image exited unexpectedly: %w", pg.Name, err))
+			fatal(fmt.Errorf("the %s builder docker image exited unexpectedly: %w", pg.Name, err))
 		}
 	}
 }
