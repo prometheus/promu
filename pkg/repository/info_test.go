@@ -56,7 +56,7 @@ func TestToSemver(t *testing.T) {
 }
 
 func TestRepoLocation(t *testing.T) {
-	var repoTests = []struct {
+	repoTests := []struct {
 		s        string // input
 		expected string // expected result
 	}{

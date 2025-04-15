@@ -98,10 +98,7 @@ type Changes []Change
 func (c Changes) Sorted() error {
 	less := func(k1, k2 Kinds) bool {
 		if len(k1) == 0 {
-			if len(k2) == 0 {
-				return true
-			}
-			return false
+			return len(k2) == 0
 		}
 		if len(k2) == 0 {
 			return true

@@ -63,8 +63,8 @@ func runTarball(binariesLocation string) {
 
 	dir := filepath.Join(tmpDir, name)
 
-	if err := os.MkdirAll(dir, 0777); err != nil {
-		fatal(fmt.Errorf("Failed to create directory: %s", err))
+	if err := os.MkdirAll(dir, 0o777); err != nil {
+		fatal(fmt.Errorf("failed to create directory: %w", err))
 	}
 	defer sh.RunCommand("rm", "-rf", tmpDir)
 
@@ -79,7 +79,7 @@ func runTarball(binariesLocation string) {
 	}
 
 	if !fileExists(prefix) {
-		os.Mkdir(prefix, 0777)
+		os.Mkdir(prefix, 0o777)
 	}
 
 	tar := fmt.Sprintf("%s.tar.gz", name)
@@ -92,7 +92,7 @@ func runTarball(binariesLocation string) {
 		archive := name + ".zip"
 		fmt.Println(" >  ", archive)
 		if err := createZIP(filepath.Join(prefix, archive), dir); err != nil {
-			fatal(fmt.Errorf("Could not create ZIP archive: %w", err))
+			fatal(fmt.Errorf("could not create ZIP archive: %w", err))
 		}
 	}
 }

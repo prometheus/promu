@@ -78,7 +78,8 @@ func buildBinary(ext string, prefix string, ldflags string, tags []string, binar
 	repoPath := config.Repository.Path
 	flags := config.Build.Flags
 
-	params := []string{"build",
+	params := []string{
+		"build",
 		"-o", path.Join(prefix, binaryName),
 		"-ldflags", ldflags,
 	}
@@ -90,7 +91,7 @@ func buildBinary(ext string, prefix string, ldflags string, tags []string, binar
 	params = append(params, path.Join(repoPath, binary.Path))
 	info("Building binary: " + "go " + strings.Join(params, " "))
 	if err := sh.RunCommand("go", params...); err != nil {
-		fatal(fmt.Errorf("command failed: %s: %s", strings.Join(params, " "), err))
+		fatal(fmt.Errorf("command failed: %s: %w", strings.Join(params, " "), err))
 	}
 }
 
@@ -101,7 +102,7 @@ func buildAll(ext string, prefix string, ldflags string, tags []string, binaries
 }
 
 func runBuild(binariesString string) {
-	//Check required configuration
+	// Check required configuration
 	if len(strings.TrimSpace(config.Repository.Path)) == 0 {
 		log.Fatalf("missing required '%s' configuration", "repository.path")
 	}
@@ -141,7 +142,7 @@ func runBuild(binariesString string) {
 	binariesArray := strings.Split(binariesString, ",")
 	binariesToBuild, err := validateBinaryNames(binariesArray, binaries)
 	if err != nil {
-		fatal(fmt.Errorf("validation of given binary names for build command failed: %s", err))
+		fatal(fmt.Errorf("validation of given binary names for build command failed: %w", err))
 	}
 
 	for _, binary := range binariesToBuild {
@@ -167,11 +168,11 @@ func getLdflags(info repository.Info) string {
 
 		tmpl, err := template.New("ldflags").Funcs(fnMap).Parse(ldflagsTmpl)
 		if err != nil {
-			fatal(fmt.Errorf("Failed to parse ldflags text/template: %s", err))
+			fatal(fmt.Errorf("failed to parse ldflags text/template: %w", err))
 		}
 
 		if err := tmpl.Execute(tmplOutput, info); err != nil {
-			fatal(fmt.Errorf("Failed to execute ldflags text/template: %s", err))
+			fatal(fmt.Errorf("failed to execute ldflags text/template: %w", err))
 		}
 
 		ldflags = append(ldflags, strings.Split(tmplOutput.String(), "\n")...)
@@ -188,7 +189,7 @@ func getLdflags(info repository.Info) string {
 		ldflags = append(ldflags, fmt.Sprintf("-extldflags '%s'", strings.Join(extLDFlags, " ")))
 	}
 
-	return strings.Join(ldflags[:], " ")
+	return strings.Join(ldflags, " ")
 }
 
 func getBuildDate() time.Time {
@@ -200,7 +201,7 @@ func getBuildDate() time.Time {
 	} else {
 		unixBuildDate, err := strconv.ParseInt(sourceDate, 10, 64)
 		if err != nil {
-			fatal(fmt.Errorf("Failed to parse %s: %w", sourceDateEpoch, err))
+			fatal(fmt.Errorf("failed to parse %s: %w", sourceDateEpoch, err))
 		} else {
 			buildDate = time.Unix(unixBuildDate, 0)
 		}
@@ -211,24 +212,21 @@ func getBuildDate() time.Time {
 func HostFunc() string {
 	if isReproducibleBuild() {
 		return "reproducible"
-	} else {
-		hostname, err := os.Hostname()
-		if err != nil {
-			return "unknown-host"
-		} else {
-			return hostname
-		}
 	}
+	hostname, err := os.Hostname()
+	if err != nil {
+		return "unknown-host"
+	}
+	return hostname
 }
 
 // UserFunc returns the current username.
 func UserFunc() (interface{}, error) {
 	if isReproducibleBuild() {
 		return "reproducible", nil
-	} else {
-		// os/user.Current() doesn't always work without CGO
-		return shellOutput("whoami"), nil
 	}
+	// os/user.Current() doesn't always work without CGO
+	return shellOutput("whoami"), nil
 }
 
 func isReproducibleBuild() bool {

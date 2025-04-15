@@ -74,7 +74,7 @@ func runRelease(location string) {
 	for {
 		releases, resp, err := client.Repositories.ListReleases(ctx, projInfo.Owner, projInfo.Name, opts)
 		if err != nil {
-			fatal(fmt.Errorf("failed to list releases: %s", err))
+			fatal(fmt.Errorf("failed to list releases: %w", err))
 		}
 		for _, r := range releases {
 			if r.GetTagName() == tag {
@@ -115,7 +115,7 @@ func runRelease(location string) {
 				Prerelease:      &prerelease,
 			})
 		if err != nil {
-			fatal(fmt.Errorf("failed to create a draft release for %s: %s", projInfo.Version, err))
+			fatal(fmt.Errorf("failed to create a draft release for %s: %w", projInfo.Version, err))
 		}
 	}
 
@@ -138,7 +138,7 @@ func runRelease(location string) {
 			}
 			opts.Page = resp.NextPage
 		}
-		fatal(fmt.Errorf("failed to upload all files: %s", err))
+		fatal(fmt.Errorf("failed to upload all files: %w", err))
 	}
 }
 
@@ -157,7 +157,7 @@ func releaseFile(ctx context.Context, client *github.Client, release *github.Rep
 		for {
 			assets, resp, err := client.Repositories.ListReleaseAssets(ctx, projInfo.Owner, projInfo.Name, release.GetID(), opts)
 			if err != nil {
-				return fmt.Errorf("failed to list release assets: %s", err)
+				return fmt.Errorf("failed to list release assets: %w", err)
 			}
 			var stop bool
 			for _, asset := range assets {

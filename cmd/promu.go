@@ -24,9 +24,10 @@ import (
 	"strings"
 
 	kingpin "github.com/alecthomas/kingpin/v2"
+	yaml "gopkg.in/yaml.v2"
+
 	"github.com/prometheus/promu/pkg/repository"
 	"github.com/prometheus/promu/util/sh"
-	yaml "gopkg.in/yaml.v2"
 )
 
 const (
@@ -137,6 +138,8 @@ func Execute() {
 		runTarball(optArg(*tarBinariesLocation, 0, "."))
 	case versioncmd.FullCommand():
 		runVersion()
+	case codesigncmd.FullCommand():
+		runCodeSign(*binaryPath)
 	}
 }
 

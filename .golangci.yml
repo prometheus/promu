@@ -1,6 +1,43 @@
-# Run only staticcheck for now. Additional linters will be enabled one-by-one.
+version: "2"
 linters:
   enable:
-  - staticcheck
-  - govet
-  disable-all: true
+    - errorlint
+    - gocritic
+    - revive
+  disable:
+    - errcheck
+    - unused
+  settings:
+    revive:
+      rules:
+        - name: unused-parameter
+          severity: warning
+          disabled: true
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+formatters:
+  enable:
+    - gofumpt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/prometheus/promu
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

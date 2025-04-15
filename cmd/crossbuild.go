@@ -104,7 +104,7 @@ var (
 )
 
 func runCrossbuild() {
-	//Check required configuration
+	// Check required configuration
 	if len(strings.TrimSpace(config.Repository.Path)) == 0 {
 		log.Fatalf("missing required '%s' configuration", "repository.path")
 	}
@@ -158,13 +158,13 @@ func runCrossbuild() {
 		// In non-CGO, use the `base` image without any crossbuild toolchain.
 		pg := &platformGroup{"base", dockerBaseBuilderImage, allPlatforms}
 		if err := pg.Build(repoPath); err != nil {
-			fatal(fmt.Errorf("The %s builder docker image exited unexpectedly: %s", pg.Name, err))
+			fatal(fmt.Errorf("the %s builder docker image exited unexpectedly: %w", pg.Name, err))
 		}
 	} else {
 		// In CGO, use the `main` image with crossbuild toolchain.
 		pg := &platformGroup{"main", dockerMainBuilderImage, allPlatforms}
 		if err := pg.Build(repoPath); err != nil {
-			fatal(fmt.Errorf("The %s builder docker image exited unexpectedly: %s", pg.Name, err))
+			fatal(fmt.Errorf("the %s builder docker image exited unexpectedly: %w", pg.Name, err))
 		}
 	}
 }
@@ -213,7 +213,7 @@ func (pg platformGroup) buildThread(repoPath string, p int) error {
 
 	cwd, err := os.Getwd()
 	if err != nil {
-		return fmt.Errorf("couldn't get current working directory: %s", err)
+		return fmt.Errorf("couldn't get current working directory: %w", err)
 	}
 
 	ctrName := "promu-crossbuild-" + pg.Name + strconv.FormatInt(time.Now().Unix(), 10) + "-" + strconv.Itoa(p)
