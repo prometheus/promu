@@ -32,7 +32,7 @@ var (
 
 	tarballPrefixSet bool
 	tarballPrefix    = tarballcmd.Flag("prefix", "Specific dir to store tarballs").
-				PreAction(func(c *kingpin.ParseContext) error {
+				PreAction(func(_ *kingpin.ParseContext) error {
 			tarballPrefixSet = true
 			return nil
 		}).
