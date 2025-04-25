@@ -1,43 +1,45 @@
-version: "2"
+formatters:
+  enable:
+    - gofumpt
+    - goimports
+
+  exclusions:
+    generated: strict
+
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/prometheus/promu
+
+issues:
+  max-issues-per-linter: 0
+
+  max-same-issues: 0
+
 linters:
+  disable:
+    - errcheck
+    - unused
+
   enable:
     - errorlint
     - gocritic
     - revive
-  disable:
-    - errcheck
-    - unused
+
+  exclusions:
+    generated: strict
+
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+
   settings:
     revive:
       rules:
         - name: unused-parameter
           severity: warning
           disabled: true
-  exclusions:
-    generated: lax
-    presets:
-      - comments
-      - common-false-positives
-      - legacy
-      - std-error-handling
-    paths:
-      - third_party$
-      - builtin$
-      - examples$
-issues:
-  max-issues-per-linter: 0
-  max-same-issues: 0
-formatters:
-  enable:
-    - gofumpt
-    - goimports
-  settings:
-    goimports:
-      local-prefixes:
-        - github.com/prometheus/promu
-  exclusions:
-    generated: lax
-    paths:
-      - third_party$
-      - builtin$
-      - examples$
+
+version: "2"
