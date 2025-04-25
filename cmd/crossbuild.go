@@ -78,7 +78,7 @@ var (
 	crossbuildcmd        = app.Command("crossbuild", "Crossbuild a Go project using Golang builder Docker images")
 	crossBuildCgoFlagSet bool
 	crossBuildCgoFlag    = crossbuildcmd.Flag("cgo", "Enable CGO using several docker images with different crossbuild toolchains.").
-				PreAction(func(c *kingpin.ParseContext) error {
+				PreAction(func(_ *kingpin.ParseContext) error {
 			crossBuildCgoFlagSet = true
 			return nil
 		}).Default("false").Bool()
@@ -86,13 +86,13 @@ var (
 	parallelThreadFlag = crossbuildcmd.Flag("parallelism-thread", "Index of the parallel build").Default("-1").Int()
 	goFlagSet          bool
 	goFlag             = crossbuildcmd.Flag("go", "Golang builder version to use (e.g. 1.11)").
-				PreAction(func(c *kingpin.ParseContext) error {
+				PreAction(func(_ *kingpin.ParseContext) error {
 			goFlagSet = true
 			return nil
 		}).String()
 	platformsFlagSet bool
 	platformsFlag    = crossbuildcmd.Flag("platforms", "Regexp match platforms to build, may be used multiple times.").Short('p').
-				PreAction(func(c *kingpin.ParseContext) error {
+				PreAction(func(_ *kingpin.ParseContext) error {
 			platformsFlagSet = true
 			return nil
 		}).Strings()
