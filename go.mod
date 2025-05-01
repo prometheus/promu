@@ -10,7 +10,7 @@ require (
 	github.com/google/go-github/v25 v25.1.3
 	github.com/prometheus/common v0.63.0
 	go.uber.org/atomic v1.11.0
-	golang.org/x/oauth2 v0.28.0
+	golang.org/x/oauth2 v0.29.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
