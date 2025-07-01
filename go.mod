@@ -8,9 +8,9 @@ require (
 	github.com/Masterminds/semver/v3 v3.3.1
 	github.com/alecthomas/kingpin/v2 v2.4.0
 	github.com/google/go-github/v25 v25.1.3
-	github.com/prometheus/common v0.63.0
+	github.com/prometheus/common v0.65.0
 	go.uber.org/atomic v1.11.0
-	golang.org/x/oauth2 v0.28.0
+	golang.org/x/oauth2 v0.30.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 
