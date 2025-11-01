@@ -2,8 +2,6 @@ module github.com/prometheus/promu
 
 go 1.24.0
 
-toolchain go1.24.1
-
 require (
 	github.com/Masterminds/semver/v3 v3.3.1
 	github.com/alecthomas/kingpin/v2 v2.4.0
