@@ -96,6 +96,8 @@ var (
 			platformsFlagSet = true
 			return nil
 		}).Strings()
+	containerEngine = "docker"
+	podmanFlag      = crossbuildcmd.Flag("podman", "Use podman instead of docker for crossbuild containers.").Bool()
 	// kingpin doesn't currently support using the crossbuild command and the
 	// crossbuild tarball subcommand at the same time, so we treat the
 	// tarball subcommand as an optional arg
@@ -110,6 +112,12 @@ func runCrossbuild() {
 	if *tarballsSubcommand == "tarballs" {
 		runCrossbuildTarballs()
 		return
+	}
+
+	if *podmanFlag {
+		containerEngine = "podman"
+	} else {
+		containerEngine = "docker"
 	}
 
 	if crossBuildCgoFlagSet {
@@ -178,7 +186,7 @@ func (pg platformGroup) Build(repoPath string) error {
 	if *parallelThreadFlag != -1 {
 		return pg.buildThread(repoPath, *parallelThreadFlag)
 	}
-	err := sh.RunCommand("docker", "pull", pg.DockerImage)
+	err := sh.RunCommand(containerEngine, "pull", pg.DockerImage)
 	if err != nil {
 		return err
 	}
@@ -208,7 +216,7 @@ func (pg platformGroup) buildThread(repoPath string, p int) error {
 		return nil
 	}
 
-	fmt.Printf("> running the %s builder docker image\n", pg.Name)
+	fmt.Printf("> running the %s builder %s image\n", pg.Name, containerEngine)
 
 	cwd, err := os.Getwd()
 	if err != nil {
@@ -216,7 +224,7 @@ func (pg platformGroup) buildThread(repoPath string, p int) error {
 	}
 
 	ctrName := "promu-crossbuild-" + pg.Name + strconv.FormatInt(time.Now().Unix(), 10) + "-" + strconv.Itoa(p)
-	err = sh.RunCommand("docker", "create", "-t",
+	err = sh.RunCommand(containerEngine, "create", "-t",
 		"--name", ctrName,
 		pg.DockerImage,
 		"-i", repoPath,
@@ -225,25 +233,25 @@ func (pg platformGroup) buildThread(repoPath string, p int) error {
 		return err
 	}
 
-	err = sh.RunCommand("docker", "cp",
+	err = sh.RunCommand(containerEngine, "cp",
 		cwd+"/.",
 		ctrName+":/app/")
 	if err != nil {
 		return err
 	}
 
-	err = sh.RunCommand("docker", "start", "-a", ctrName)
+	err = sh.RunCommand(containerEngine, "start", "-a", ctrName)
 	if err != nil {
 		return err
 	}
 
-	err = sh.RunCommand("docker", "cp", "-a",
+	err = sh.RunCommand(containerEngine, "cp", "-a",
 		ctrName+":/app/.build/.",
 		cwd+"/.build")
 	if err != nil {
 		return err
 	}
-	return sh.RunCommand("docker", "rm", "-f", ctrName)
+	return sh.RunCommand(containerEngine, "rm", "-f", ctrName)
 }
 
 func removeDuplicates(strings []string) []string {
