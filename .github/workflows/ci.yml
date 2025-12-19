@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - master
+  pull_request:
+  workflow_call:
+
+jobs:
+  test_go:
+    name: Go tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Install Go
+        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
+        with:
+          go-version: 1.25.x
+      - run: go build -o promu-intermediate
+      - run: make check_license style unused lint test build PROMU=./promu-intermediate
+      - run: rm -v promu promu-intermediate
+      - run: git diff --exit-code
+
+  build:
+    name: Build for common architectures
+    runs-on: ubuntu-latest
+    environment:
+        PROMU: ./promu-intermediate
+    if: |
+      !(github.event_name == 'push' && github.event.ref == 'refs/heads/master')
+      &&
+      !(github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+    strategy:
+      matrix:
+        thread: [ 0, 1, 2 ]
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Install Go
+        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
+        with:
+          go-version: 1.25.x
+      - run: go build -o promu-intermediate
+      - run: ./promu-intermediate crossbuild -v --parallelism 3 --parallelism-thread ${{ matrix.thread }}
+
+  publish_master:
+    name: Publish master branch artifacts
+    runs-on: ubuntu-latest
+    needs: [test_go, build, verify-example-configs]
+    environment:
+        PROMU: ./promu-intermediate
+    if: |
+      (github.repository == 'prometheus/promu')
+      &&
+      (github.event_name == 'push' && github.event.ref == 'refs/heads/master')
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: prometheus/promci@443c7fc2397e946bc9f5029e313a9c3441b9b86d # v0.4.7
+      - run: go build -o promu-intermediate
+      - uses: ./.github/promci/actions/publish_main
+        with:
+          docker_hub_organization: prometheuscommunity
+          docker_hub_login: ${{ secrets.docker_hub_login }}
+          docker_hub_password: ${{ secrets.docker_hub_password }}
+          quay_io_organization: prometheuscommunity
+          quay_io_login: ${{ secrets.quay_io_login }}
+          quay_io_password: ${{ secrets.quay_io_password }}
+
+  publish_release:
+    name: Publish release artifacts
+    runs-on: ubuntu-latest
+    needs: [test_go, build, verify-example-configs]
+    environment:
+        PROMU: ./promu-intermediate
+    if: |
+      (github.repository == 'prometheus/promu')
+      &&
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v0.'))
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: prometheus/promci@443c7fc2397e946bc9f5029e313a9c3441b9b86d # v0.4.7
+      - run: go build -o promu-intermediate
+      - uses: ./.github/promci/actions/publish_release
+        with:
+          docker_hub_organization: prometheuscommunity
+          docker_hub_login: ${{ secrets.docker_hub_login }}
+          docker_hub_password: ${{ secrets.docker_hub_password }}
+          quay_io_organization: prometheuscommunity
+          quay_io_login: ${{ secrets.quay_io_login }}
+          quay_io_password: ${{ secrets.quay_io_password }}
+          github_token: ${{ secrets.PROMBOT_GITHUB_TOKEN }}
