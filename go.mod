@@ -6,10 +6,10 @@ require (
 	github.com/Masterminds/semver/v3 v3.4.0
 	github.com/alecthomas/kingpin/v2 v2.4.0
 	github.com/google/go-github/v25 v25.1.3
-	github.com/prometheus/common v0.67.4
+	github.com/prometheus/common v0.67.5
 	go.uber.org/atomic v1.11.0
+	go.yaml.in/yaml/v2 v2.4.3
 	golang.org/x/oauth2 v0.34.0
-	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
