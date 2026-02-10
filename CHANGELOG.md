@@ -1,3 +1,7 @@
+## 0.18.0 / 2026-02-10
+
+* [FEATURE] add cli flag to use podman instead of docker for crossbuild #360
+
 ## 0.17.1 / 2025-04-02
 
 * [BUGFIX] Fix short version print #333

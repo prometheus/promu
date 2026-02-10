@@ -9,7 +9,7 @@ require (
 	github.com/prometheus/common v0.67.5
 	go.uber.org/atomic v1.11.0
 	go.yaml.in/yaml/v2 v2.4.3
-	golang.org/x/oauth2 v0.34.0
+	golang.org/x/oauth2 v0.35.0
 )
 
 require (
