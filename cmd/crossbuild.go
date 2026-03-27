@@ -51,6 +51,7 @@ var (
 		"linux/armv5",
 		"linux/armv6",
 		"linux/armv7",
+		"linux/loong64",
 		"linux/mips",
 		"linux/mips64",
 		"linux/mips64le",
