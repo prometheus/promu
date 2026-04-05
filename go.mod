@@ -1,6 +1,6 @@
 module github.com/prometheus/promu
 
-go 1.24.0
+go 1.25.0
 
 require (
 	github.com/Masterminds/semver/v3 v3.4.0
@@ -9,7 +9,7 @@ require (
 	github.com/prometheus/common v0.67.5
 	go.uber.org/atomic v1.11.0
 	go.yaml.in/yaml/v2 v2.4.4
-	golang.org/x/oauth2 v0.35.0
+	golang.org/x/oauth2 v0.36.0
 )
 
 require (
