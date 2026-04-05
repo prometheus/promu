@@ -70,12 +70,12 @@ func runTarball(binariesLocation string) {
 
 	projectFiles := config.Tarball.Files
 	for _, file := range projectFiles {
-		sh.RunCommand("cp", "-a", file, dir)
+		sh.RunCommand("cp", "-dR", file, dir)
 	}
 
 	for _, binary := range binaries {
 		binaryName := fmt.Sprintf("%s%s", binary.Name, ext)
-		sh.RunCommand("cp", "-a", filepath.Join(binariesLocation, binaryName), dir)
+		sh.RunCommand("cp", "-dR", filepath.Join(binariesLocation, binaryName), dir)
 	}
 
 	if !fileExists(prefix) {
