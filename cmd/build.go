@@ -181,7 +181,7 @@ func getLdflags(info repository.Info) string {
 	}
 
 	extLDFlags := config.Build.ExtLDFlags
-	if config.Build.Static && goos != "darwin" && goos != "solaris" && goos != "illumos" && !stringInSlice("-static", extLDFlags) {
+	if config.Build.Static && goos != "darwin" && goos != "solaris" && goos != "illumos" && goos != "aix" && !stringInSlice("-static", extLDFlags) {
 		extLDFlags = append(extLDFlags, "-static")
 	}
 
