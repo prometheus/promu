@@ -1,3 +1,7 @@
+## 0.18.1 / 2026-04-06
+
+* [BUGFIX] Fix tarball command compatibility #375
+
 ## 0.18.0 / 2026-02-10
 
 * [FEATURE] add cli flag to use podman instead of docker for crossbuild #360
