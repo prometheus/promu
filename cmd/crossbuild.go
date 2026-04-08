@@ -22,11 +22,10 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	kingpin "github.com/alecthomas/kingpin/v2"
-	"go.uber.org/atomic"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/prometheus/promu/util/sh"
 )
@@ -190,19 +189,13 @@ func (pg platformGroup) Build(repoPath string) error {
 	if err != nil {
 		return err
 	}
-	var wg sync.WaitGroup
-	wg.Add(*parallelFlag)
-	atomicErr := atomic.NewError(nil)
-	for p := 0; p < *parallelFlag; p++ {
-		go func(p int) {
-			defer wg.Done()
-			if err := pg.buildThread(repoPath, p); err != nil {
-				atomicErr.Store(err)
-			}
-		}(p)
+	var g errgroup.Group
+	for p := range *parallelFlag {
+		g.Go(func() error {
+			return pg.buildThread(repoPath, p)
+		})
 	}
-	wg.Wait()
-	return atomicErr.Load()
+	return g.Wait()
 }
 
 func (pg platformGroup) buildThread(repoPath string, p int) error {
