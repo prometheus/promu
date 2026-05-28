@@ -50,6 +50,8 @@ jobs:
   publish_release:
     name: Publish release artifacts
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     needs: [test_go, build]
     if: |
       (github.repository == 'prometheus/promu')
@@ -59,4 +61,4 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: prometheus/promci/publish_release@42c3c84c865e5c1ab78543b929f7341eb2ef6123 # v0.6.1
         with:
-          github_token: ${{ secrets.PROMBOT_GITHUB_TOKEN }}
+          github_token: ${{ github.token }}
