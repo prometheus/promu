@@ -97,6 +97,7 @@ var (
 		}).Strings()
 	containerEngine = "docker"
 	podmanFlag      = crossbuildcmd.Flag("podman", "Use podman instead of docker for crossbuild containers.").Bool()
+	pullFlag        = crossbuildcmd.Flag("pull", "Pull the builder Docker image before building.").Default("true").Bool()
 	// kingpin doesn't currently support using the crossbuild command and the
 	// crossbuild tarball subcommand at the same time, so we treat the
 	// tarball subcommand as an optional arg
@@ -185,9 +186,10 @@ func (pg platformGroup) Build(repoPath string) error {
 	if *parallelThreadFlag != -1 {
 		return pg.buildThread(repoPath, *parallelThreadFlag)
 	}
-	err := sh.RunCommand(containerEngine, "pull", pg.DockerImage)
-	if err != nil {
-		return err
+	if *pullFlag {
+		if err := sh.RunCommand(containerEngine, "pull", pg.DockerImage); err != nil {
+			return err
+		}
 	}
 	var g errgroup.Group
 	for p := range *parallelFlag {
