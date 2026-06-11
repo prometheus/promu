@@ -1,3 +1,7 @@
+## 0.19.0 / 2026-06-11
+
+* [FEATURE] crossbuild: add --pull flag to control image pulling #394
+
 ## 0.18.1 / 2026-04-06
 
 * [BUGFIX] Fix tarball command compatibility #375
