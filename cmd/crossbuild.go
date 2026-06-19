@@ -96,12 +96,16 @@ var (
 			return nil
 		}).Strings()
 	containerEngine = "docker"
+	envFlag         = crossbuildcmd.Flag("env", "Environment variable (NAME=value) to pass to the build container, may be used multiple times.").Short('e').Strings()
 	podmanFlag      = crossbuildcmd.Flag("podman", "Use podman instead of docker for crossbuild containers.").Bool()
 	pullFlag        = crossbuildcmd.Flag("pull", "Pull the builder Docker image before building.").Default("true").Bool()
 	// kingpin doesn't currently support using the crossbuild command and the
 	// crossbuild tarball subcommand at the same time, so we treat the
 	// tarball subcommand as an optional arg
 	tarballsSubcommand = crossbuildcmd.Arg("tarballs", "Optionally pass the string \"tarballs\" from cross-built binaries").String()
+
+	// envVarRE matches a NAME=value environment variable assignment.
+	envVarRE = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*=`)
 )
 
 func runCrossbuild() {
@@ -128,6 +132,12 @@ func runCrossbuild() {
 	}
 	if platformsFlagSet {
 		config.Crossbuild.Platforms = *platformsFlag
+	}
+
+	for _, env := range *envFlag {
+		if !envVarRE.MatchString(env) {
+			log.Fatalf("invalid --env value %q, expected NAME=value", env)
+		}
 	}
 
 	var (
@@ -219,11 +229,14 @@ func (pg platformGroup) buildThread(repoPath string, p int) error {
 	}
 
 	ctrName := "promu-crossbuild-" + pg.Name + strconv.FormatInt(time.Now().Unix(), 10) + "-" + strconv.Itoa(p)
-	err = sh.RunCommand(containerEngine, "create", "-t",
-		"--name", ctrName,
-		pg.DockerImage,
-		"-i", repoPath,
-		"-p", platformsParam)
+	createArgs := []string{"create", "-t", "--name", ctrName}
+	// Forward environment variables so the in-container build can reuse them,
+	// e.g. PREBUILT_ASSETS_STATIC_DIR to point at pre-built assets.
+	for _, env := range *envFlag {
+		createArgs = append(createArgs, "-e", env)
+	}
+	createArgs = append(createArgs, pg.DockerImage, "-i", repoPath, "-p", platformsParam)
+	err = sh.RunCommand(containerEngine, createArgs...)
 	if err != nil {
 		return err
 	}
