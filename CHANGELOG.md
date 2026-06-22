@@ -1,3 +1,7 @@
+## 0.20.0 / 2026-06-22
+
+* [FEATURE] crossbuild: add --env flag to forward env vars to build containers #399
+
 ## 0.19.0 / 2026-06-11
 
 * [FEATURE] crossbuild: add --pull flag to control image pulling #394
