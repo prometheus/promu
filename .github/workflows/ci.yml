@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - master
+  pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  test_go:
+    name: Go tests
+    runs-on: ubuntu-latest
+    env:
+        PROMU: ./promu-intermediate
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - name: Install Go
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version: 1.26.x
+      - run: go build -o promu-intermediate
+      - run: make check_license style unused lint test build
+      - run: rm -v promu promu-intermediate
+      - run: git diff --exit-code
+
+  build:
+    name: Build for common architectures
+    runs-on: ubuntu-latest
+    env:
+        PROMU: ./promu-intermediate
+    strategy:
+      matrix:
+        thread: [ 0, 1, 2, 3]
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - name: Install Go
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version: 1.26.x
+      - run: go build -o promu-intermediate
+      - run: ./promu-intermediate crossbuild -v --parallelism 4 --parallelism-thread ${{ matrix.thread }}
+      - uses: prometheus/promci-artifacts/save@f9a587dbc0b2c78a0c54f8ad1cde71ea29a4b76f # v0.1.0
+
+  publish_release:
+    name: Publish release artifacts
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    needs: [test_go, build]
+    if: |
+      (github.repository == 'prometheus/promu')
+      &&
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+    steps:
+      - uses: prometheus/promci/publish_release@13941414d409d227afd67544e5d306827db5a1a2 # v0.8.5
+        with:
+          github_token: ${{ github.token }}

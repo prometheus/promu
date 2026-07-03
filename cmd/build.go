@@ -39,13 +39,13 @@ var (
 	buildcmd        = app.Command("build", "Build a Go project")
 	buildCgoFlagSet bool
 	buildCgoFlag    = buildcmd.Flag("cgo", "Enable CGO").
-			PreAction(func(c *kingpin.ParseContext) error {
+			PreAction(func(_ *kingpin.ParseContext) error {
 			buildCgoFlagSet = true
 			return nil
 		}).Bool()
 	prefixFlagSet bool
 	prefixFlag    = buildcmd.Flag("prefix", "Specific dir to store binaries (default is .)").
-			PreAction(func(c *kingpin.ParseContext) error {
+			PreAction(func(_ *kingpin.ParseContext) error {
 			prefixFlagSet = true
 			return nil
 		}).String()
@@ -181,7 +181,7 @@ func getLdflags(info repository.Info) string {
 	}
 
 	extLDFlags := config.Build.ExtLDFlags
-	if config.Build.Static && goos != "darwin" && goos != "solaris" && goos != "illumos" && !stringInSlice("-static", extLDFlags) {
+	if config.Build.Static && goos != "darwin" && goos != "solaris" && goos != "illumos" && goos != "aix" && !stringInSlice("-static", extLDFlags) {
 		extLDFlags = append(extLDFlags, "-static")
 	}
 

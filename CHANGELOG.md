@@ -1,3 +1,19 @@
+## 0.20.0 / 2026-06-22
+
+* [FEATURE] crossbuild: add --env flag to forward env vars to build containers #399
+
+## 0.19.0 / 2026-06-11
+
+* [FEATURE] crossbuild: add --pull flag to control image pulling #394
+
+## 0.18.1 / 2026-04-06
+
+* [BUGFIX] Fix tarball command compatibility #375
+
+## 0.18.0 / 2026-02-10
+
+* [FEATURE] add cli flag to use podman instead of docker for crossbuild #360
+
 ## 0.17.1 / 2025-04-02
 
 * [BUGFIX] Fix short version print #333

@@ -1,4 +1,6 @@
-# Prometheus Utility Tool [![CircleCI](https://circleci.com/gh/prometheus/promu/tree/master.svg?style=shield)][circleci]
+# Prometheus Utility Tool
+
+[![Build Status](https://github.com/prometheus/promu/actions/workflows/ci.yml/badge.svg)](https://github.com/prometheus/promu/actions/workflows/ci.yml)
 
 ## Usage
 

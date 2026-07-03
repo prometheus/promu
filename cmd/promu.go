@@ -24,7 +24,7 @@ import (
 	"strings"
 
 	kingpin "github.com/alecthomas/kingpin/v2"
-	yaml "gopkg.in/yaml.v2"
+	"go.yaml.in/yaml/v2"
 
 	"github.com/prometheus/promu/pkg/repository"
 	"github.com/prometheus/promu/util/sh"

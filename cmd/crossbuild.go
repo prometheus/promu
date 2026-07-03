@@ -22,11 +22,10 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	kingpin "github.com/alecthomas/kingpin/v2"
-	"go.uber.org/atomic"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/prometheus/promu/util/sh"
 )
@@ -79,7 +78,7 @@ var (
 	crossbuildcmd        = app.Command("crossbuild", "Crossbuild a Go project using Golang builder Docker images")
 	crossBuildCgoFlagSet bool
 	crossBuildCgoFlag    = crossbuildcmd.Flag("cgo", "Enable CGO using several docker images with different crossbuild toolchains.").
-				PreAction(func(c *kingpin.ParseContext) error {
+				PreAction(func(_ *kingpin.ParseContext) error {
 			crossBuildCgoFlagSet = true
 			return nil
 		}).Default("false").Bool()
@@ -87,20 +86,27 @@ var (
 	parallelThreadFlag = crossbuildcmd.Flag("parallelism-thread", "Index of the parallel build").Default("-1").Int()
 	goFlagSet          bool
 	goFlag             = crossbuildcmd.Flag("go", "Golang builder version to use (e.g. 1.11)").
-				PreAction(func(c *kingpin.ParseContext) error {
+				PreAction(func(_ *kingpin.ParseContext) error {
 			goFlagSet = true
 			return nil
 		}).String()
 	platformsFlagSet bool
 	platformsFlag    = crossbuildcmd.Flag("platforms", "Regexp match platforms to build, may be used multiple times.").Short('p').
-				PreAction(func(c *kingpin.ParseContext) error {
+				PreAction(func(_ *kingpin.ParseContext) error {
 			platformsFlagSet = true
 			return nil
 		}).Strings()
+	containerEngine = "docker"
+	envFlag         = crossbuildcmd.Flag("env", "Environment variable (NAME=value) to pass to the build container, may be used multiple times.").Short('e').Strings()
+	podmanFlag      = crossbuildcmd.Flag("podman", "Use podman instead of docker for crossbuild containers.").Bool()
+	pullFlag        = crossbuildcmd.Flag("pull", "Pull the builder Docker image before building.").Default("true").Bool()
 	// kingpin doesn't currently support using the crossbuild command and the
 	// crossbuild tarball subcommand at the same time, so we treat the
 	// tarball subcommand as an optional arg
 	tarballsSubcommand = crossbuildcmd.Arg("tarballs", "Optionally pass the string \"tarballs\" from cross-built binaries").String()
+
+	// envVarRE matches a NAME=value environment variable assignment.
+	envVarRE = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*=`)
 )
 
 func runCrossbuild() {
@@ -113,6 +119,12 @@ func runCrossbuild() {
 		return
 	}
 
+	if *podmanFlag {
+		containerEngine = "podman"
+	} else {
+		containerEngine = "docker"
+	}
+
 	if crossBuildCgoFlagSet {
 		config.Go.CGo = *crossBuildCgoFlag
 	}
@@ -121,6 +133,12 @@ func runCrossbuild() {
 	}
 	if platformsFlagSet {
 		config.Crossbuild.Platforms = *platformsFlag
+	}
+
+	for _, env := range *envFlag {
+		if !envVarRE.MatchString(env) {
+			log.Fatalf("invalid --env value %q, expected NAME=value", env)
+		}
 	}
 
 	var (
@@ -179,23 +197,18 @@ func (pg platformGroup) Build(repoPath string) error {
 	if *parallelThreadFlag != -1 {
 		return pg.buildThread(repoPath, *parallelThreadFlag)
 	}
-	err := sh.RunCommand("docker", "pull", pg.DockerImage)
-	if err != nil {
-		return err
+	if *pullFlag {
+		if err := sh.RunCommand(containerEngine, "pull", pg.DockerImage); err != nil {
+			return err
+		}
 	}
-	var wg sync.WaitGroup
-	wg.Add(*parallelFlag)
-	atomicErr := atomic.NewError(nil)
-	for p := 0; p < *parallelFlag; p++ {
-		go func(p int) {
-			defer wg.Done()
-			if err := pg.buildThread(repoPath, p); err != nil {
-				atomicErr.Store(err)
-			}
-		}(p)
+	var g errgroup.Group
+	for p := range *parallelFlag {
+		g.Go(func() error {
+			return pg.buildThread(repoPath, p)
+		})
 	}
-	wg.Wait()
-	return atomicErr.Load()
+	return g.Wait()
 }
 
 func (pg platformGroup) buildThread(repoPath string, p int) error {
@@ -209,7 +222,7 @@ func (pg platformGroup) buildThread(repoPath string, p int) error {
 		return nil
 	}
 
-	fmt.Printf("> running the %s builder docker image\n", pg.Name)
+	fmt.Printf("> running the %s builder %s image\n", pg.Name, containerEngine)
 
 	cwd, err := os.Getwd()
 	if err != nil {
@@ -217,34 +230,37 @@ func (pg platformGroup) buildThread(repoPath string, p int) error {
 	}
 
 	ctrName := "promu-crossbuild-" + pg.Name + strconv.FormatInt(time.Now().Unix(), 10) + "-" + strconv.Itoa(p)
-	err = sh.RunCommand("docker", "create", "-t",
-		"--name", ctrName,
-		pg.DockerImage,
-		"-i", repoPath,
-		"-p", platformsParam)
+	createArgs := []string{"create", "-t", "--name", ctrName}
+	// Forward environment variables so the in-container build can reuse them,
+	// e.g. PREBUILT_ASSETS_STATIC_DIR to point at pre-built assets.
+	for _, env := range *envFlag {
+		createArgs = append(createArgs, "-e", env)
+	}
+	createArgs = append(createArgs, pg.DockerImage, "-i", repoPath, "-p", platformsParam)
+	err = sh.RunCommand(containerEngine, createArgs...)
 	if err != nil {
 		return err
 	}
 
-	err = sh.RunCommand("docker", "cp",
+	err = sh.RunCommand(containerEngine, "cp",
 		cwd+"/.",
 		ctrName+":/app/")
 	if err != nil {
 		return err
 	}
 
-	err = sh.RunCommand("docker", "start", "-a", ctrName)
+	err = sh.RunCommand(containerEngine, "start", "-a", ctrName)
 	if err != nil {
 		return err
 	}
 
-	err = sh.RunCommand("docker", "cp", "-a",
+	err = sh.RunCommand(containerEngine, "cp", "-a",
 		ctrName+":/app/.build/.",
 		cwd+"/.build")
 	if err != nil {
 		return err
 	}
-	return sh.RunCommand("docker", "rm", "-f", ctrName)
+	return sh.RunCommand(containerEngine, "rm", "-f", ctrName)
 }
 
 func removeDuplicates(strings []string) []string {
