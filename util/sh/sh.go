@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"regexp"
 	"strings"
+	"unicode"
 )
 
 // Verbose enables verbose output
@@ -38,8 +38,39 @@ func RunCommand(name string, arg ...string) error {
 	return cmd.Run()
 }
 
-// SplitParameters splits shell command parameters, taking quoting in account.
+// SplitParameters splits shell command parameters, taking quoting into account.
+// Single and double quotes group text without becoming part of the parameter.
 func SplitParameters(s string) []string {
-	r := regexp.MustCompile(`'[^']*'|[^ ]+`)
-	return r.FindAllString(s, -1)
+	var (
+		params  []string
+		current strings.Builder
+		inParam bool
+		quote   rune
+	)
+	for _, r := range s {
+		switch {
+		case quote != 0:
+			if r == quote {
+				quote = 0
+				continue
+			}
+			current.WriteRune(r)
+		case r == '\'' || r == '"':
+			quote = r
+			inParam = true
+		case unicode.IsSpace(r):
+			if inParam {
+				params = append(params, current.String())
+				current.Reset()
+				inParam = false
+			}
+		default:
+			current.WriteRune(r)
+			inParam = true
+		}
+	}
+	if inParam {
+		params = append(params, current.String())
+	}
+	return params
 }
