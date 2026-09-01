@@ -49,7 +49,7 @@ jobs:
           go-version: 1.26.x
       - run: go build -o promu-intermediate
       - run: ./promu-intermediate crossbuild -v --parallelism 4 --parallelism-thread ${{ matrix.thread }}
-      - uses: prometheus/promci-artifacts/save@f9a587dbc0b2c78a0c54f8ad1cde71ea29a4b76f # v0.1.0
+      - uses: prometheus/promci-artifacts/save@9ca3252d07f230d5f923452b4df5697eba4a5bee # v0.1.1
 
   publish_release:
     name: Publish release artifacts
