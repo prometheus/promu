@@ -1,6 +1,6 @@
 module github.com/prometheus/promu
 
-go 1.25.0
+go 1.26.0
 
 require (
 	github.com/Masterminds/semver/v3 v3.5.0
@@ -8,8 +8,8 @@ require (
 	github.com/google/go-github/v25 v25.1.3
 	github.com/prometheus/common v0.69.0
 	go.yaml.in/yaml/v2 v2.4.4
-	golang.org/x/oauth2 v0.36.0
-	golang.org/x/sync v0.22.0
+	golang.org/x/oauth2 v0.37.0
+	golang.org/x/sync v0.23.0
 )
 
 require (
