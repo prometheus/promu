@@ -16,6 +16,7 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -35,9 +36,7 @@ func runCrossbuildTarballs() {
 			os.Setenv("GOOS", platform[0])
 			os.Setenv("GOARCH", platform[1])
 		} else {
-			if err := fmt.Errorf("bad .build/%s directory naming, should be <GOOS>-<GOARCH>", platform); err != nil {
-				fatal(err)
-			}
+			log.Fatalf("bad .build/%s directory naming, should be <GOOS>-<GOARCH>", platform)
 		}
 
 		runTarball(filepath.Join(".build", dir.Name()))
