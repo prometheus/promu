@@ -14,17 +14,57 @@
 package sh
 
 import (
-	"strings"
+	"reflect"
 	"testing"
 )
 
 func TestSplitParameters(t *testing.T) {
-	in := `-a -tags 'netgo static_build'`
-	expect := []string{"-a", "-tags", `'netgo static_build'`}
-	got := SplitParameters(in)
-	for i, g := range got {
-		if expect[i] != g {
-			t.Error("expected", expect[i], "got", g, "full output: ", strings.Join(got, "#"))
-		}
+	for _, tc := range []struct {
+		name string
+		in   string
+		want []string
+	}{
+		{
+			name: "empty",
+			in:   "",
+			want: nil,
+		},
+		{
+			name: "blanks only",
+			in:   "  \t ",
+			want: nil,
+		},
+		{
+			name: "unquoted",
+			in:   "-a -tags netgo",
+			want: []string{"-a", "-tags", "netgo"},
+		},
+		{
+			name: "extra blanks",
+			in:   "  -a \t -mod=vendor  ",
+			want: []string{"-a", "-mod=vendor"},
+		},
+		{
+			name: "single quotes",
+			in:   `-a -tags 'netgo static_build'`,
+			want: []string{"-a", "-tags", "netgo static_build"},
+		},
+		{
+			name: "double quotes",
+			in:   `-a -tags "netgo static_build"`,
+			want: []string{"-a", "-tags", "netgo static_build"},
+		},
+		{
+			name: "quotes attached to the flag",
+			in:   `-gcflags="all=-N -l"`,
+			want: []string{"-gcflags=all=-N -l"},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			got := SplitParameters(tc.in)
+			if !reflect.DeepEqual(got, tc.want) {
+				t.Errorf("SplitParameters(%q) = %q, want %q", tc.in, got, tc.want)
+			}
+		})
 	}
 }
