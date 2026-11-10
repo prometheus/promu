@@ -1,3 +1,7 @@
+## 0.21.0 / 2026-11-09
+
+* [CHANGE] Strip quotes when splitting build parameters #412
+
 ## 0.20.0 / 2026-06-22
 
 * [FEATURE] crossbuild: add --env flag to forward env vars to build containers #399
