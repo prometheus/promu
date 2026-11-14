@@ -87,6 +87,15 @@ func runRelease(location string) {
 		}
 		opts.Page = resp.NextPage
 	}
+	// A draft from an earlier run can point at another commit. While the tag
+	// does not exist, publishing the draft creates it at that commit.
+	if release.GetDraft() && release.GetTargetCommitish() != projInfo.Revision {
+		release, _, err = client.Repositories.EditRelease(ctx, projInfo.Owner, projInfo.Name, release.GetID(),
+			&github.RepositoryRelease{TargetCommitish: &projInfo.Revision})
+		if err != nil {
+			fatal(fmt.Errorf("failed to update the target commit of the draft release for %s: %w", projInfo.Version, err))
+		}
+	}
 	if release == nil {
 		f, err := os.Open("CHANGELOG.md")
 		if err != nil {
